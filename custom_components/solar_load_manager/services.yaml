@@ -1,0 +1,20 @@
+boost:
+  name: Boost
+  description: Force a managed device on for a period, ignoring surplus and price.
+  fields:
+    device:
+      name: Device
+      description: Name of the managed device (as configured in the hub).
+      required: true
+      example: CWU
+      selector:
+        text:
+    minutes:
+      name: Minutes
+      description: How long to keep the device on.
+      default: 60
+      selector:
+        number:
+          min: 5
+          max: 480
+          unit_of_measurement: min

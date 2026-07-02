@@ -1,0 +1,110 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Solar Load Manager",
+        "data": {
+          "surplus_sensor": "PV surplus sensor [W]",
+          "price_sensor": "Current price sensor",
+          "price_min_sensor": "Minimum price today sensor",
+          "price_max_sensor": "Maximum price today sensor",
+          "smoothing_seconds": "Surplus smoothing window [s]",
+          "import_tolerance": "Grid import tolerance [W]",
+          "cheap_score": "Cheap price score threshold (0-1)",
+          "override_minutes": "Manual override backoff [min]"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Only one hub is supported."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Solar Load Manager",
+        "menu_options": {
+          "hub": "Hub settings",
+          "add_device": "Add device",
+          "edit_device": "Edit device",
+          "remove_device": "Remove device"
+        }
+      },
+      "hub": {
+        "title": "Hub settings",
+        "data": {
+          "surplus_sensor": "PV surplus sensor [W]",
+          "price_sensor": "Current price sensor",
+          "price_min_sensor": "Minimum price today sensor",
+          "price_max_sensor": "Maximum price today sensor",
+          "smoothing_seconds": "Surplus smoothing window [s]",
+          "import_tolerance": "Grid import tolerance [W]",
+          "cheap_score": "Cheap price score threshold (0-1)",
+          "override_minutes": "Manual override backoff [min]"
+        }
+      },
+      "add_device": {
+        "title": "Add managed device",
+        "data": {
+          "name": "Name",
+          "priority": "Priority (1 = served first)",
+          "device_type": "Device type",
+          "entity": "Controlled entity (switch/climate)",
+          "rated_power": "Rated power [W]",
+          "on_factor": "Turn-on factor (e.g. 1.1 = 110%)",
+          "min_on_minutes": "Minimum on time [min]",
+          "min_off_minutes": "Minimum off time [min]",
+          "block_score": "Block above price score (1.01 = never)",
+          "hvac_mode": "HVAC mode (climate only)",
+          "must_run_enabled": "Guaranteed run window",
+          "must_run_start": "Window start",
+          "must_run_end": "Window end"
+        }
+      },
+      "edit_device": {
+        "title": "Edit managed device",
+        "data": {
+          "name": "Name",
+          "priority": "Priority (1 = served first)",
+          "device_type": "Device type",
+          "entity": "Controlled entity (switch/climate)",
+          "rated_power": "Rated power [W]",
+          "on_factor": "Turn-on factor (e.g. 1.1 = 110%)",
+          "min_on_minutes": "Minimum on time [min]",
+          "min_off_minutes": "Minimum off time [min]",
+          "block_score": "Block above price score (1.01 = never)",
+          "hvac_mode": "HVAC mode (climate only)",
+          "must_run_enabled": "Guaranteed run window",
+          "must_run_start": "Window start",
+          "must_run_end": "Window end"
+        }
+      },
+      "tesla": {
+        "title": "Tesla charging settings",
+        "data": {
+          "charge_switch": "Charge switch",
+          "current_number": "Charge current number entity",
+          "cable_sensor": "Cable connected sensor",
+          "charger_power_sensor": "Charger power sensor [kW]",
+          "phases": "Charging phases",
+          "voltage": "Phase voltage [V]",
+          "min_amps": "Minimum amps",
+          "max_amps": "Maximum amps"
+        }
+      },
+      "remove_device": {
+        "title": "Remove managed device",
+        "data": {
+          "name": "Device"
+        }
+      }
+    },
+    "error": {
+      "name_exists": "A device with this name already exists.",
+      "entity_required": "Controlled entity is required for this device type."
+    },
+    "abort": {
+      "no_devices": "No devices configured yet."
+    }
+  }
+}

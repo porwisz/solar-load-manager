@@ -1,0 +1,332 @@
+"""Config flow for Solar Load Manager."""
+from __future__ import annotations
+
+from datetime import time
+from typing import Any
+
+import voluptuous as vol
+
+from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
+from homeassistant.core import callback
+from homeassistant.helpers import selector
+
+from .const import (
+    CONF_BLOCK_SCORE,
+    CONF_CABLE_SENSOR,
+    CONF_CHARGE_SWITCH,
+    CONF_CHARGER_POWER_SENSOR,
+    CONF_CHEAP_SCORE,
+    CONF_CURRENT_NUMBER,
+    CONF_DEVICE_TYPE,
+    CONF_DEVICES,
+    CONF_ENTITY,
+    CONF_HVAC_MODE,
+    CONF_IMPORT_TOLERANCE,
+    CONF_MAX_AMPS,
+    CONF_MIN_AMPS,
+    CONF_MIN_OFF,
+    CONF_MIN_ON,
+    CONF_MUST_RUN_ENABLED,
+    CONF_MUST_RUN_END,
+    CONF_MUST_RUN_START,
+    CONF_NAME,
+    CONF_ON_FACTOR,
+    CONF_OVERRIDE_MINUTES,
+    CONF_PHASES,
+    CONF_PRICE_MAX_SENSOR,
+    CONF_PRICE_MIN_SENSOR,
+    CONF_PRICE_SENSOR,
+    CONF_PRIORITY,
+    CONF_RATED_POWER,
+    CONF_SMOOTHING_SECONDS,
+    CONF_SURPLUS_SENSOR,
+    CONF_VOLTAGE,
+    DEFAULT_BLOCK_SCORE,
+    DEFAULT_CHEAP_SCORE,
+    DEFAULT_IMPORT_TOLERANCE,
+    DEFAULT_MAX_AMPS,
+    DEFAULT_MIN_AMPS,
+    DEFAULT_MIN_OFF,
+    DEFAULT_MIN_ON,
+    DEFAULT_ON_FACTOR,
+    DEFAULT_OVERRIDE_MINUTES,
+    DEFAULT_PHASES,
+    DEFAULT_SMOOTHING_SECONDS,
+    DEFAULT_VOLTAGE,
+    DEVICE_TYPE_CLIMATE,
+    DEVICE_TYPE_SWITCH,
+    DEVICE_TYPE_TESLA,
+    DEVICE_TYPES,
+    DOMAIN,
+)
+from .models import DeviceConfig
+
+
+def _parse_time(value: str | None) -> time | None:
+    if not value:
+        return None
+    parts = [int(p) for p in str(value).split(":")]
+    while len(parts) < 3:
+        parts.append(0)
+    return time(parts[0], parts[1], parts[2])
+
+
+def device_from_dict(data: dict[str, Any]) -> DeviceConfig:
+    """Build a DeviceConfig from a stored options dict."""
+    return DeviceConfig(
+        name=data[CONF_NAME],
+        priority=int(data.get(CONF_PRIORITY, 99)),
+        device_type=data.get(CONF_DEVICE_TYPE, DEVICE_TYPE_SWITCH),
+        entity=data.get(CONF_ENTITY, ""),
+        rated_power=float(data.get(CONF_RATED_POWER, 1500)),
+        on_factor=float(data.get(CONF_ON_FACTOR, DEFAULT_ON_FACTOR)),
+        min_on_minutes=float(data.get(CONF_MIN_ON, DEFAULT_MIN_ON)),
+        min_off_minutes=float(data.get(CONF_MIN_OFF, DEFAULT_MIN_OFF)),
+        block_score=float(data.get(CONF_BLOCK_SCORE, DEFAULT_BLOCK_SCORE)),
+        hvac_mode=data.get(CONF_HVAC_MODE, "heat"),
+        must_run_enabled=bool(data.get(CONF_MUST_RUN_ENABLED, False)),
+        must_run_start=_parse_time(data.get(CONF_MUST_RUN_START)),
+        must_run_end=_parse_time(data.get(CONF_MUST_RUN_END)),
+        charge_switch=data.get(CONF_CHARGE_SWITCH, ""),
+        current_number=data.get(CONF_CURRENT_NUMBER, ""),
+        cable_sensor=data.get(CONF_CABLE_SENSOR, ""),
+        charger_power_sensor=data.get(CONF_CHARGER_POWER_SENSOR, ""),
+        phases=int(data.get(CONF_PHASES, DEFAULT_PHASES)),
+        voltage=float(data.get(CONF_VOLTAGE, DEFAULT_VOLTAGE)),
+        min_amps=int(data.get(CONF_MIN_AMPS, DEFAULT_MIN_AMPS)),
+        max_amps=int(data.get(CONF_MAX_AMPS, DEFAULT_MAX_AMPS)),
+    )
+
+
+def _sensor_selector() -> selector.EntitySelector:
+    return selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor"))
+
+
+HUB_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_SURPLUS_SENSOR): _sensor_selector(),
+        vol.Required(CONF_PRICE_SENSOR): _sensor_selector(),
+        vol.Required(CONF_PRICE_MIN_SENSOR): _sensor_selector(),
+        vol.Required(CONF_PRICE_MAX_SENSOR): _sensor_selector(),
+        vol.Optional(CONF_SMOOTHING_SECONDS, default=DEFAULT_SMOOTHING_SECONDS): vol.Coerce(int),
+        vol.Optional(CONF_IMPORT_TOLERANCE, default=DEFAULT_IMPORT_TOLERANCE): vol.Coerce(float),
+        vol.Optional(CONF_CHEAP_SCORE, default=DEFAULT_CHEAP_SCORE): vol.Coerce(float),
+        vol.Optional(CONF_OVERRIDE_MINUTES, default=DEFAULT_OVERRIDE_MINUTES): vol.Coerce(float),
+    }
+)
+
+
+class SlmConfigFlow(ConfigFlow, domain=DOMAIN):
+    """Hub setup flow."""
+
+    VERSION = 1
+
+    async def async_step_user(self, user_input: dict[str, Any] | None = None):
+        await self.async_set_unique_id(DOMAIN)
+        self._abort_if_unique_id_configured()
+        if user_input is not None:
+            return self.async_create_entry(
+                title="Solar Load Manager",
+                data=user_input,
+                options={CONF_DEVICES: []},
+            )
+        return self.async_show_form(step_id="user", data_schema=HUB_SCHEMA)
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
+        return SlmOptionsFlow()
+
+
+class SlmOptionsFlow(OptionsFlow):
+    """Options: hub settings, add/edit/remove devices."""
+
+    def __init__(self) -> None:
+        self._edit_name: str | None = None
+        self._pending: dict[str, Any] = {}
+
+    @property
+    def _devices(self) -> list[dict[str, Any]]:
+        return list(self.config_entry.options.get(CONF_DEVICES, []))
+
+    async def async_step_init(self, user_input: dict[str, Any] | None = None):
+        return self.async_show_menu(
+            step_id="init",
+            menu_options=["hub", "add_device", "edit_device", "remove_device"],
+        )
+
+    async def async_step_hub(self, user_input: dict[str, Any] | None = None):
+        if user_input is not None:
+            options = dict(self.config_entry.options)
+            options.update(user_input)
+            return self.async_create_entry(title="", data=options)
+        current = {**self.config_entry.data, **self.config_entry.options}
+        schema = self.add_suggested_values_to_schema(HUB_SCHEMA, current)
+        return self.async_show_form(step_id="hub", data_schema=schema)
+
+    # -- add / edit ---------------------------------------------------------
+
+    def _device_schema(self, existing: dict[str, Any] | None = None) -> vol.Schema:
+        e = existing or {}
+        return vol.Schema(
+            {
+                vol.Required(CONF_NAME, default=e.get(CONF_NAME, "")): str,
+                vol.Required(CONF_PRIORITY, default=e.get(CONF_PRIORITY, 1)): vol.Coerce(int),
+                vol.Required(
+                    CONF_DEVICE_TYPE, default=e.get(CONF_DEVICE_TYPE, DEVICE_TYPE_SWITCH)
+                ): selector.SelectSelector(
+                    selector.SelectSelectorConfig(options=DEVICE_TYPES)
+                ),
+                vol.Optional(CONF_ENTITY, default=e.get(CONF_ENTITY, "")): selector.EntitySelector(
+                    selector.EntitySelectorConfig(
+                        domain=["switch", "climate", "input_boolean"]
+                    )
+                ),
+                vol.Required(
+                    CONF_RATED_POWER, default=e.get(CONF_RATED_POWER, 1500)
+                ): vol.Coerce(float),
+                vol.Optional(
+                    CONF_ON_FACTOR, default=e.get(CONF_ON_FACTOR, DEFAULT_ON_FACTOR)
+                ): vol.Coerce(float),
+                vol.Optional(CONF_MIN_ON, default=e.get(CONF_MIN_ON, DEFAULT_MIN_ON)): vol.Coerce(
+                    float
+                ),
+                vol.Optional(
+                    CONF_MIN_OFF, default=e.get(CONF_MIN_OFF, DEFAULT_MIN_OFF)
+                ): vol.Coerce(float),
+                vol.Optional(
+                    CONF_BLOCK_SCORE, default=e.get(CONF_BLOCK_SCORE, DEFAULT_BLOCK_SCORE)
+                ): vol.Coerce(float),
+                vol.Optional(CONF_HVAC_MODE, default=e.get(CONF_HVAC_MODE, "heat")): selector.SelectSelector(
+                    selector.SelectSelectorConfig(options=["heat", "cool", "auto", "heat_cool"])
+                ),
+                vol.Optional(
+                    CONF_MUST_RUN_ENABLED, default=e.get(CONF_MUST_RUN_ENABLED, False)
+                ): bool,
+                vol.Optional(
+                    CONF_MUST_RUN_START, default=e.get(CONF_MUST_RUN_START, "14:00:00")
+                ): selector.TimeSelector(),
+                vol.Optional(
+                    CONF_MUST_RUN_END, default=e.get(CONF_MUST_RUN_END, "16:00:00")
+                ): selector.TimeSelector(),
+            }
+        )
+
+    def _tesla_schema(self, existing: dict[str, Any] | None = None) -> vol.Schema:
+        e = existing or {}
+        return vol.Schema(
+            {
+                vol.Required(
+                    CONF_CHARGE_SWITCH, default=e.get(CONF_CHARGE_SWITCH) or None
+                ): selector.EntitySelector(selector.EntitySelectorConfig(domain="switch")),
+                vol.Required(
+                    CONF_CURRENT_NUMBER, default=e.get(CONF_CURRENT_NUMBER) or None
+                ): selector.EntitySelector(selector.EntitySelectorConfig(domain="number")),
+                vol.Required(
+                    CONF_CABLE_SENSOR, default=e.get(CONF_CABLE_SENSOR) or None
+                ): selector.EntitySelector(
+                    selector.EntitySelectorConfig(domain="binary_sensor")
+                ),
+                vol.Required(
+                    CONF_CHARGER_POWER_SENSOR, default=e.get(CONF_CHARGER_POWER_SENSOR) or None
+                ): _sensor_selector(),
+                vol.Optional(CONF_PHASES, default=e.get(CONF_PHASES, DEFAULT_PHASES)): vol.In(
+                    [1, 3]
+                ),
+                vol.Optional(
+                    CONF_VOLTAGE, default=e.get(CONF_VOLTAGE, DEFAULT_VOLTAGE)
+                ): vol.Coerce(float),
+                vol.Optional(
+                    CONF_MIN_AMPS, default=e.get(CONF_MIN_AMPS, DEFAULT_MIN_AMPS)
+                ): vol.Coerce(int),
+                vol.Optional(
+                    CONF_MAX_AMPS, default=e.get(CONF_MAX_AMPS, DEFAULT_MAX_AMPS)
+                ): vol.Coerce(int),
+            }
+        )
+
+    async def async_step_add_device(self, user_input: dict[str, Any] | None = None):
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            if any(d[CONF_NAME] == user_input[CONF_NAME] for d in self._devices):
+                errors["base"] = "name_exists"
+            elif user_input[CONF_DEVICE_TYPE] != DEVICE_TYPE_TESLA and not user_input.get(
+                CONF_ENTITY
+            ):
+                errors["base"] = "entity_required"
+            elif user_input[CONF_DEVICE_TYPE] == DEVICE_TYPE_TESLA:
+                self._pending = user_input
+                return await self.async_step_tesla()
+            else:
+                return self._save_device(user_input)
+        return self.async_show_form(
+            step_id="add_device", data_schema=self._device_schema(), errors=errors
+        )
+
+    async def async_step_edit_device(self, user_input: dict[str, Any] | None = None):
+        devices = self._devices
+        if not devices:
+            return self.async_abort(reason="no_devices")
+        if self._edit_name is None:
+            if user_input is not None:
+                self._edit_name = user_input[CONF_NAME]
+                existing = next(d for d in devices if d[CONF_NAME] == self._edit_name)
+                return self.async_show_form(
+                    step_id="edit_device", data_schema=self._device_schema(existing)
+                )
+            return self.async_show_form(
+                step_id="edit_device",
+                data_schema=vol.Schema(
+                    {
+                        vol.Required(CONF_NAME): selector.SelectSelector(
+                            selector.SelectSelectorConfig(
+                                options=[d[CONF_NAME] for d in devices]
+                            )
+                        )
+                    }
+                ),
+            )
+        assert user_input is not None
+        user_input[CONF_NAME] = self._edit_name  # name is the key; keep it stable
+        existing = next(d for d in devices if d[CONF_NAME] == self._edit_name)
+        if user_input[CONF_DEVICE_TYPE] == DEVICE_TYPE_TESLA:
+            self._pending = {**existing, **user_input}
+            return await self.async_step_tesla()
+        return self._save_device(user_input, replace=self._edit_name)
+
+    async def async_step_tesla(self, user_input: dict[str, Any] | None = None):
+        if user_input is not None:
+            device = {**self._pending, **user_input}
+            replace = self._edit_name
+            return self._save_device(device, replace=replace)
+        return self.async_show_form(
+            step_id="tesla", data_schema=self._tesla_schema(self._pending)
+        )
+
+    def _save_device(self, device: dict[str, Any], replace: str | None = None):
+        devices = [d for d in self._devices if d[CONF_NAME] != (replace or device[CONF_NAME])]
+        devices.append(device)
+        options = dict(self.config_entry.options)
+        options[CONF_DEVICES] = devices
+        return self.async_create_entry(title="", data=options)
+
+    async def async_step_remove_device(self, user_input: dict[str, Any] | None = None):
+        devices = self._devices
+        if not devices:
+            return self.async_abort(reason="no_devices")
+        if user_input is not None:
+            options = dict(self.config_entry.options)
+            options[CONF_DEVICES] = [
+                d for d in devices if d[CONF_NAME] != user_input[CONF_NAME]
+            ]
+            return self.async_create_entry(title="", data=options)
+        return self.async_show_form(
+            step_id="remove_device",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_NAME): selector.SelectSelector(
+                        selector.SelectSelectorConfig(options=[d[CONF_NAME] for d in devices])
+                    )
+                }
+            ),
+        )

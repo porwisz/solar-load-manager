@@ -1,0 +1,13 @@
+{
+  "domain": "solar_load_manager",
+  "name": "Solar Load Manager",
+  "codeowners": ["@porwisz"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/porwisz/solar-load-manager",
+  "integration_type": "hub",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/porwisz/solar-load-manager/issues",
+  "requirements": [],
+  "version": "1.0.0"
+}
