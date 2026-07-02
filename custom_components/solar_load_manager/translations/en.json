@@ -49,13 +49,9 @@
           "name": "Name",
           "priority": "Priority (1 = served first)",
           "device_type": "Device type",
-          "entity": "Controlled entity (switch/climate)",
-          "rated_power": "Rated power [W]",
-          "on_factor": "Turn-on factor (e.g. 1.1 = 110%)",
           "min_on_minutes": "Minimum on time [min]",
           "min_off_minutes": "Minimum off time [min]",
           "block_score": "Block above price score (1.01 = never)",
-          "hvac_mode": "HVAC mode (climate only)",
           "must_run_enabled": "Guaranteed run window",
           "must_run_start": "Window start",
           "must_run_end": "Window end"
@@ -67,13 +63,9 @@
           "name": "Name",
           "priority": "Priority (1 = served first)",
           "device_type": "Device type",
-          "entity": "Controlled entity (switch/climate)",
-          "rated_power": "Rated power [W]",
-          "on_factor": "Turn-on factor (e.g. 1.1 = 110%)",
           "min_on_minutes": "Minimum on time [min]",
           "min_off_minutes": "Minimum off time [min]",
           "block_score": "Block above price score (1.01 = never)",
-          "hvac_mode": "HVAC mode (climate only)",
           "must_run_enabled": "Guaranteed run window",
           "must_run_start": "Window start",
           "must_run_end": "Window end"
@@ -97,11 +89,19 @@
         "data": {
           "name": "Device"
         }
+      },
+      "onoff": {
+        "title": "Controlled device",
+        "data": {
+          "entity": "Controlled entity (switch/climate)",
+          "rated_power": "Rated power [W]",
+          "on_factor": "Turn-on factor (e.g. 1.1 = 110%)",
+          "hvac_mode": "HVAC mode (climate only)"
+        }
       }
     },
     "error": {
-      "name_exists": "A device with this name already exists.",
-      "entity_required": "Controlled entity is required for this device type."
+      "name_exists": "A device with this name already exists."
     },
     "abort": {
       "no_devices": "No devices configured yet."

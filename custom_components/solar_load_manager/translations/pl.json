@@ -49,13 +49,9 @@
           "name": "Nazwa",
           "priority": "Priorytet (1 = pierwszy)",
           "device_type": "Typ urządzenia",
-          "entity": "Sterowana encja (switch/climate)",
-          "rated_power": "Moc znamionowa [W]",
-          "on_factor": "Współczynnik włączenia (np. 1.1 = 110%)",
           "min_on_minutes": "Minimalny czas pracy [min]",
           "min_off_minutes": "Minimalny czas postoju [min]",
           "block_score": "Blokada powyżej score ceny (1.01 = nigdy)",
-          "hvac_mode": "Tryb HVAC (tylko climate)",
           "must_run_enabled": "Okno gwarantowanej pracy",
           "must_run_start": "Początek okna",
           "must_run_end": "Koniec okna"
@@ -67,13 +63,9 @@
           "name": "Nazwa",
           "priority": "Priorytet (1 = pierwszy)",
           "device_type": "Typ urządzenia",
-          "entity": "Sterowana encja (switch/climate)",
-          "rated_power": "Moc znamionowa [W]",
-          "on_factor": "Współczynnik włączenia (np. 1.1 = 110%)",
           "min_on_minutes": "Minimalny czas pracy [min]",
           "min_off_minutes": "Minimalny czas postoju [min]",
           "block_score": "Blokada powyżej score ceny (1.01 = nigdy)",
-          "hvac_mode": "Tryb HVAC (tylko climate)",
           "must_run_enabled": "Okno gwarantowanej pracy",
           "must_run_start": "Początek okna",
           "must_run_end": "Koniec okna"
@@ -97,11 +89,19 @@
         "data": {
           "name": "Urządzenie"
         }
+      },
+      "onoff": {
+        "title": "Sterowane urządzenie",
+        "data": {
+          "entity": "Sterowana encja (switch/climate)",
+          "rated_power": "Moc znamionowa [W]",
+          "on_factor": "Współczynnik włączenia (np. 1.1 = 110%)",
+          "hvac_mode": "Tryb HVAC (tylko climate)"
+        }
       }
     },
     "error": {
-      "name_exists": "Urządzenie o tej nazwie już istnieje.",
-      "entity_required": "Dla tego typu urządzenia wymagana jest sterowana encja."
+      "name_exists": "Urządzenie o tej nazwie już istnieje."
     },
     "abort": {
       "no_devices": "Nie skonfigurowano jeszcze urządzeń."
