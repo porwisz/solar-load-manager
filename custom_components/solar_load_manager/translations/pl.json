@@ -3,6 +3,7 @@
     "step": {
       "user": {
         "title": "Solar Load Manager",
+        "description": "Wskaż czujniki nadwyżki PV i cen dynamicznych. Urządzenia dodasz później przez menu Konfiguruj tego wpisu.",
         "data": {
           "surplus_sensor": "Czujnik nadwyżki PV [W]",
           "price_sensor": "Czujnik aktualnej ceny",
@@ -12,6 +13,16 @@
           "import_tolerance": "Tolerancja importu z sieci [W]",
           "cheap_score": "Próg taniej energii (score 0-1)",
           "override_minutes": "Pauza po ręcznej zmianie [min]"
+        },
+        "data_description": {
+          "surplus_sensor": "Chwilowa produkcja minus zużycie w watach. Dodatnia = eksport. Podaj surowy czujnik - wygładzanie robi integracja.",
+          "price_sensor": "Aktualna cena energii (np. RCE PSE Price). Dowolna waluta/jednostka - porównywana tylko z dzisiejszym min/max.",
+          "price_min_sensor": "Najniższa godzinowa cena dziś (np. RCE PSE Minimum Price Today).",
+          "price_max_sensor": "Najwyższa godzinowa cena dziś (np. RCE PSE Maximum Price Today).",
+          "smoothing_seconds": "Okno średniej ruchomej nadwyżki. Większe = spokojniej, ale wolniejsza reakcja na chmury. Domyślnie 300 s.",
+          "import_tolerance": "Ile watów można pobrać z sieci zanim urządzenia zaczną być wyłączane. Kompensuje też szacowane (niemierzone) zużycie. Domyślnie 300 W.",
+          "cheap_score": "Score ceny to pozycja w dzisiejszym zakresie: 0 = najtańsza godzina, 1 = najdroższa. Na progu lub poniżej urządzenia działają niezależnie od słońca. Domyślnie 0.1.",
+          "override_minutes": "Po ręcznej zmianie urządzenia menedżer nie rusza go przez ten czas. Domyślnie 30 min."
         }
       }
     },
@@ -32,6 +43,7 @@
       },
       "hub": {
         "title": "Ustawienia huba",
+        "description": "Czujniki i progi wspólne dla wszystkich urządzeń.",
         "data": {
           "surplus_sensor": "Czujnik nadwyżki PV [W]",
           "price_sensor": "Czujnik aktualnej ceny",
@@ -41,38 +53,88 @@
           "import_tolerance": "Tolerancja importu z sieci [W]",
           "cheap_score": "Próg taniej energii (score 0-1)",
           "override_minutes": "Pauza po ręcznej zmianie [min]"
+        },
+        "data_description": {
+          "surplus_sensor": "Chwilowa produkcja minus zużycie w watach. Dodatnia = eksport. Podaj surowy czujnik - wygładzanie robi integracja.",
+          "price_sensor": "Aktualna cena energii (np. RCE PSE Price). Dowolna waluta/jednostka - porównywana tylko z dzisiejszym min/max.",
+          "price_min_sensor": "Najniższa godzinowa cena dziś (np. RCE PSE Minimum Price Today).",
+          "price_max_sensor": "Najwyższa godzinowa cena dziś (np. RCE PSE Maximum Price Today).",
+          "smoothing_seconds": "Okno średniej ruchomej nadwyżki. Większe = spokojniej, ale wolniejsza reakcja na chmury. Domyślnie 300 s.",
+          "import_tolerance": "Ile watów można pobrać z sieci zanim urządzenia zaczną być wyłączane. Kompensuje też szacowane (niemierzone) zużycie. Domyślnie 300 W.",
+          "cheap_score": "Score ceny to pozycja w dzisiejszym zakresie: 0 = najtańsza godzina, 1 = najdroższa. Na progu lub poniżej urządzenia działają niezależnie od słońca. Domyślnie 0.1.",
+          "override_minutes": "Po ręcznej zmianie urządzenia menedżer nie rusza go przez ten czas. Domyślnie 30 min."
         }
       },
       "add_device": {
         "title": "Dodaj urządzenie",
+        "description": "Krok 1 z 2: nazwa, priorytet i limity bezpieczeństwa. W następnym kroku wskażesz, czym sterować.",
         "data": {
           "name": "Nazwa",
-          "priority": "Priorytet (1 = pierwszy)",
+          "priority": "Priorytet",
           "device_type": "Typ urządzenia",
           "min_on_minutes": "Minimalny czas pracy [min]",
           "min_off_minutes": "Minimalny czas postoju [min]",
-          "block_score": "Blokada powyżej score ceny (1.01 = nigdy)",
+          "block_score": "Blokada powyżej score ceny",
           "must_run_enabled": "Okno gwarantowanej pracy",
           "must_run_start": "Początek okna",
           "must_run_end": "Koniec okna"
+        },
+        "data_description": {
+          "name": "Widoczna w nazwach encji i używana w usłudze boost. Późniejsza zmiana nazwy tworzy nowe encje.",
+          "priority": "1 = obsługiwany pierwszy. Gdy nadwyżka maleje, najwyższy numer jest wyłączany pierwszy.",
+          "device_type": "switch: cokolwiek z wł./wył. climate: termostat sterowany trybem HVAC. tesla: ładowanie EV z modulacją amperażu.",
+          "min_on_minutes": "Po włączeniu urządzenie pracuje co najmniej tyle - chroni sprężarki i grzałki przed cyklowaniem.",
+          "min_off_minutes": "Po wyłączeniu urządzenie odpoczywa co najmniej tyle zanim menedżer może je ponownie włączyć.",
+          "block_score": "Urządzenie nie włączy się, gdy score ceny przekracza tę wartość (0 = najtańsza godzina, 1 = najdroższa). 1.01 wyłącza blokadę.",
+          "must_run_enabled": "Wymuś codzienną pracę w poniższym oknie, niezależnie od słońca i ceny - gwarancja komfortu.",
+          "must_run_start": "Początek okna (czas lokalny). Okno przechodzące przez północ jest obsługiwane.",
+          "must_run_end": "Koniec okna (czas lokalny)."
         }
       },
       "edit_device": {
         "title": "Edytuj urządzenie",
+        "description": "Wybierz urządzenie, potem popraw jego ustawienia w kolejnych krokach.",
         "data": {
           "name": "Nazwa",
-          "priority": "Priorytet (1 = pierwszy)",
+          "priority": "Priorytet",
           "device_type": "Typ urządzenia",
           "min_on_minutes": "Minimalny czas pracy [min]",
           "min_off_minutes": "Minimalny czas postoju [min]",
-          "block_score": "Blokada powyżej score ceny (1.01 = nigdy)",
+          "block_score": "Blokada powyżej score ceny",
           "must_run_enabled": "Okno gwarantowanej pracy",
           "must_run_start": "Początek okna",
           "must_run_end": "Koniec okna"
+        },
+        "data_description": {
+          "priority": "1 = obsługiwany pierwszy. Gdy nadwyżka maleje, najwyższy numer jest wyłączany pierwszy.",
+          "device_type": "switch: cokolwiek z wł./wył. climate: termostat sterowany trybem HVAC. tesla: ładowanie EV z modulacją amperażu.",
+          "min_on_minutes": "Po włączeniu urządzenie pracuje co najmniej tyle - chroni sprężarki i grzałki przed cyklowaniem.",
+          "min_off_minutes": "Po wyłączeniu urządzenie odpoczywa co najmniej tyle zanim menedżer może je ponownie włączyć.",
+          "block_score": "Urządzenie nie włączy się, gdy score ceny przekracza tę wartość (0 = najtańsza godzina, 1 = najdroższa). 1.01 wyłącza blokadę.",
+          "must_run_enabled": "Wymuś codzienną pracę w poniższym oknie, niezależnie od słońca i ceny - gwarancja komfortu.",
+          "must_run_start": "Początek okna (czas lokalny). Okno przechodzące przez północ jest obsługiwane.",
+          "must_run_end": "Koniec okna (czas lokalny)."
+        }
+      },
+      "onoff": {
+        "title": "Sterowane urządzenie",
+        "description": "Krok 2 z 2: którą encją sterować i ile mocy pobiera.",
+        "data": {
+          "entity": "Sterowana encja",
+          "rated_power": "Moc znamionowa [W]",
+          "on_factor": "Współczynnik włączenia",
+          "hvac_mode": "Tryb HVAC (tylko climate)"
+        },
+        "data_description": {
+          "entity": "Encja switch lub climate, którą menedżer włącza i wyłącza.",
+          "rated_power": "Typowy pobór mocy podczas pracy. Sprawdź tabliczkę znamionową albo skok zużycia przy starcie. Menedżer rezerwuje tyle nadwyżki.",
+          "on_factor": "Margines startu: przy 1.1 urządzenie włączy się dopiero, gdy nadwyżka pokryje 110% mocy. Do utrzymania pracy wystarczy 100% - to daje histerezę.",
+          "hvac_mode": "Tryb ustawiany przy włączeniu encji climate (heat dla jacuzzi/bojlera, cool dla klimatyzacji). Ignorowany dla switchy."
         }
       },
       "tesla": {
         "title": "Ustawienia ładowania Tesli",
+        "description": "Krok 2 z 2: encje ładowania z integracji Tesli. Amperaż przeliczany co minutę: dostępne waty / (napięcie x fazy).",
         "data": {
           "charge_switch": "Przełącznik ładowania",
           "current_number": "Encja number prądu ładowania",
@@ -82,21 +144,23 @@
           "voltage": "Napięcie fazowe [V]",
           "min_amps": "Minimalny prąd [A]",
           "max_amps": "Maksymalny prąd [A]"
+        },
+        "data_description": {
+          "charge_switch": "Przełącznik startu/stopu ładowania, np. switch.charge. Jeśli auto samo przerwie (osiągnięty limit), menedżer odpuszcza zamiast walczyć.",
+          "current_number": "Encja number ustawiająca prąd ładowania, np. number.charge_current.",
+          "cable_sensor": "Czujnik binarny włączony, gdy kabel jest podłączony, np. binary_sensor.charge_cable. Bez kabla nic się nie dzieje.",
+          "charger_power_sensor": "Aktualna moc ładowania w kW, np. sensor.charger_power. Potrzebna, by pobór auta wracał do dostępnego budżetu.",
+          "phases": "3 dla wall connectora trójfazowego (16 A = 11 kW), 1 dla jednej fazy (16 A = 3.7 kW). Weryfikacja: moc ładowania = amperaż x 230 x fazy.",
+          "voltage": "Napięcie fazowe, w Europie 230 V.",
+          "min_amps": "Poniżej tej wartości ładowanie jest nieefektywne, więc zamiast tego jest przerywane. Minimum Tesli to 5 A.",
+          "max_amps": "Górny limit - obciążalność wall connectora / obwodu, zwykle 16 A."
         }
       },
       "remove_device": {
         "title": "Usuń urządzenie",
+        "description": "Usuwa urządzenie z zarządzania wraz z jego przełącznikiem i czujnikiem statusu. Fizyczne urządzenie pozostaje nietknięte.",
         "data": {
           "name": "Urządzenie"
-        }
-      },
-      "onoff": {
-        "title": "Sterowane urządzenie",
-        "data": {
-          "entity": "Sterowana encja (switch/climate)",
-          "rated_power": "Moc znamionowa [W]",
-          "on_factor": "Współczynnik włączenia (np. 1.1 = 110%)",
-          "hvac_mode": "Tryb HVAC (tylko climate)"
         }
       }
     },
