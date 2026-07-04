@@ -170,6 +170,7 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
             pairs,
             budget_w,
             price,
+            price_source,
             float(self._conf(CONF_CHEAP_PRICE, DEFAULT_CHEAP_PRICE)),
             float(self._conf(CONF_IMPORT_TOLERANCE, DEFAULT_IMPORT_TOLERANCE)),
             now_local,

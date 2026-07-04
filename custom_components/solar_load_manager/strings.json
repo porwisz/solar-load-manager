@@ -21,7 +21,7 @@
           "buy_price_attribute": "If the tariff sensor's state is not numeric, read the price from this attribute (default: 'price').",
           "smoothing_seconds": "Smoothing window for the net power derived from the hourly balance. Larger = calmer but slower reactions. Default 300 s.",
           "import_tolerance": "How many watts of grid import to tolerate before shedding loads. Also absorbs estimation error in consumption. Default 300 W.",
-          "cheap_price": "When the marginal price (sell while exporting, tariff while importing) is at or below this, devices run regardless of the power budget. Default 0.15.",
+          "cheap_price": "Applies ONLY while net-exporting: when the sell (RCE) price is at or below this, surplus is burned in devices instead of being sold. Never forces consumption from the grid (unless the price is negative). Default 0.15.",
           "override_minutes": "When you change a managed device by hand, the manager leaves it alone for this long. Default 30 min."
         }
       }
@@ -61,7 +61,7 @@
           "buy_price_attribute": "If the tariff sensor's state is not numeric, read the price from this attribute (default: 'price').",
           "smoothing_seconds": "Smoothing window for the net power derived from the hourly balance. Larger = calmer but slower reactions. Default 300 s.",
           "import_tolerance": "How many watts of grid import to tolerate before shedding loads. Also absorbs estimation error in consumption. Default 300 W.",
-          "cheap_price": "When the marginal price (sell while exporting, tariff while importing) is at or below this, devices run regardless of the power budget. Default 0.15.",
+          "cheap_price": "Applies ONLY while net-exporting: when the sell (RCE) price is at or below this, surplus is burned in devices instead of being sold. Never forces consumption from the grid (unless the price is negative). Default 0.15.",
           "override_minutes": "When you change a managed device by hand, the manager leaves it alone for this long. Default 30 min."
         }
       },

@@ -105,6 +105,7 @@ def allocate(
     devices: list[tuple[DeviceConfig, DeviceInput]],
     surplus_w: float,
     price: float | None,
+    price_source: str,
     cheap_price: float,
     import_tolerance: float,
     now: datetime,
@@ -120,7 +121,12 @@ def allocate(
     """
     ordered = sorted(devices, key=lambda pair: pair[0].priority)
     effective_price = 999.0 if price is None else price
-    cheap = effective_price <= cheap_price
+    # "Cheap" may only force devices on when consuming beats selling:
+    # while net-exporting with a worthless sell price, or when the price
+    # is negative. It must never force consumption from the grid at tariff.
+    cheap = (price_source == "sell" and effective_price <= cheap_price) or (
+        effective_price <= 0
+    )
 
     budget = surplus_w + import_tolerance
     for cfg, inp in ordered:

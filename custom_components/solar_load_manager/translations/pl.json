@@ -21,7 +21,7 @@
           "buy_price_attribute": "Jeśli stan czujnika taryfy nie jest liczbą, cena czytana jest z tego atrybutu (domyślnie 'price').",
           "smoothing_seconds": "Okno wygładzania mocy netto wyliczanej z bilansu godzinowego. Większe = spokojniej, ale wolniej. Domyślnie 300 s.",
           "import_tolerance": "Ile watów importu z sieci tolerować zanim urządzenia będą wyłączane. Pochłania też błąd szacowania zużycia. Domyślnie 300 W.",
-          "cheap_price": "Gdy cena krańcowa (RCE przy eksporcie, taryfa przy imporcie) jest na progu lub niżej, urządzenia działają niezależnie od budżetu mocy. Domyślnie 0.15.",
+          "cheap_price": "Działa TYLKO przy eksporcie netto: gdy cena sprzedaży (RCE) jest na progu lub niżej, nadwyżka idzie w urządzenia zamiast na sprzedaż. Nigdy nie wymusza poboru z sieci (chyba że cena jest ujemna). Domyślnie 0.15.",
           "override_minutes": "Po ręcznej zmianie urządzenia menedżer nie rusza go przez ten czas. Domyślnie 30 min."
         }
       }
@@ -61,7 +61,7 @@
           "buy_price_attribute": "Jeśli stan czujnika taryfy nie jest liczbą, cena czytana jest z tego atrybutu (domyślnie 'price').",
           "smoothing_seconds": "Okno wygładzania mocy netto wyliczanej z bilansu godzinowego. Większe = spokojniej, ale wolniej. Domyślnie 300 s.",
           "import_tolerance": "Ile watów importu z sieci tolerować zanim urządzenia będą wyłączane. Pochłania też błąd szacowania zużycia. Domyślnie 300 W.",
-          "cheap_price": "Gdy cena krańcowa (RCE przy eksporcie, taryfa przy imporcie) jest na progu lub niżej, urządzenia działają niezależnie od budżetu mocy. Domyślnie 0.15.",
+          "cheap_price": "Działa TYLKO przy eksporcie netto: gdy cena sprzedaży (RCE) jest na progu lub niżej, nadwyżka idzie w urządzenia zamiast na sprzedaż. Nigdy nie wymusza poboru z sieci (chyba że cena jest ujemna). Domyślnie 0.15.",
           "override_minutes": "Po ręcznej zmianie urządzenia menedżer nie rusza go przez ten czas. Domyślnie 30 min."
         }
       },

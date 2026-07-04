@@ -30,8 +30,8 @@ def inp(**kw):
     return DeviceInput(**defaults)
 
 
-def run(pairs, surplus, price=0.5, cheap=0.15, tolerance=300):
-    return allocate(pairs, surplus, price, cheap, tolerance, NOW)
+def run(pairs, surplus, price=0.5, source="sell", cheap=0.15, tolerance=300):
+    return allocate(pairs, surplus, price, source, cheap, tolerance, NOW)
 
 
 # --- marginal price --------------------------------------------------------
@@ -91,9 +91,24 @@ def test_shed_on_import():
     assert decisions["cwu"].reason == "insufficient_surplus"
 
 
-def test_cheap_price_forces_on():
+def test_cheap_price_forces_on_while_exporting():
     d1 = dev("cwu", 1, 1500)
-    decisions = run([(d1, inp())], surplus=0, price=0.05)
+    decisions = run([(d1, inp())], surplus=0, price=0.05, source="sell")
+    assert decisions["cwu"].should_be_on
+    assert decisions["cwu"].reason == "running_cheap"
+
+
+def test_cheap_never_forces_grid_consumption():
+    # Low tariff price while importing must NOT force devices on
+    d1 = dev("cwu", 1, 1500)
+    decisions = run([(d1, inp())], surplus=-3000, price=0.05, source="buy")
+    assert not decisions["cwu"].should_be_on
+    assert decisions["cwu"].reason == "insufficient_surplus"
+
+
+def test_negative_price_forces_on_even_from_grid():
+    d1 = dev("cwu", 1, 1500)
+    decisions = run([(d1, inp())], surplus=-3000, price=-0.02, source="buy")
     assert decisions["cwu"].should_be_on
     assert decisions["cwu"].reason == "running_cheap"
 
