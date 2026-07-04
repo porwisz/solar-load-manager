@@ -5,23 +5,23 @@
         "title": "Solar Load Manager",
         "description": "Point the manager at your PV surplus and dynamic price sensors. Devices are added later via the Configure menu of this entry.",
         "data": {
-          "surplus_sensor": "PV surplus sensor [W]",
-          "price_sensor": "Current price sensor",
-          "price_min_sensor": "Minimum price today sensor",
-          "price_max_sensor": "Maximum price today sensor",
-          "smoothing_seconds": "Surplus smoothing window [s]",
+          "hourly_balance_sensor": "Hourly PV balance sensor [kWh]",
+          "sell_price_sensor": "Sell price sensor (RCE)",
+          "buy_price_sensor": "Buy price (tariff) sensor",
+          "buy_price_attribute": "Buy price attribute",
+          "smoothing_seconds": "Net power smoothing window [s]",
           "import_tolerance": "Grid import tolerance [W]",
-          "cheap_score": "Cheap price score threshold (0-1)",
+          "cheap_price": "Cheap energy threshold [price/kWh]",
           "override_minutes": "Manual override backoff [min]"
         },
         "data_description": {
-          "surplus_sensor": "Instantaneous production minus consumption in watts. Positive = exporting. Use the raw sensor - smoothing is applied internally.",
-          "price_sensor": "Current energy price (e.g. RCE PSE Price). Any currency/unit, it is only compared against today's min/max.",
-          "price_min_sensor": "Today's lowest hourly price (e.g. RCE PSE Minimum Price Today).",
-          "price_max_sensor": "Today's highest hourly price (e.g. RCE PSE Maximum Price Today).",
-          "smoothing_seconds": "Moving-average window for the surplus. Larger = calmer but slower reactions to clouds. Default 300 s.",
-          "import_tolerance": "How many watts may be drawn from the grid before loads are shed. Also compensates estimated (not measured) consumption. Default 300 W.",
-          "cheap_score": "Price score is today's price position: 0 = cheapest hour, 1 = most expensive. At or below this threshold devices run regardless of sun. Default 0.1.",
+          "hourly_balance_sensor": "Net production minus consumption accumulated in the current hour, in kWh (resets each hour). Positive = net exporter so far. This drives both the power budget and which price applies.",
+          "sell_price_sensor": "What one exported kWh earns you (e.g. RCE PSE Price). Used as the marginal cost while the hour's balance is positive - consuming then only forgoes this revenue.",
+          "buy_price_sensor": "Your time-of-day import tariff. Used as the marginal cost once the hour's balance goes negative.",
+          "buy_price_attribute": "If the tariff sensor's state is not numeric, read the price from this attribute (default: 'price').",
+          "smoothing_seconds": "Smoothing window for the net power derived from the hourly balance. Larger = calmer but slower reactions. Default 300 s.",
+          "import_tolerance": "How many watts of grid import to tolerate before shedding loads. Also absorbs estimation error in consumption. Default 300 W.",
+          "cheap_price": "When the marginal price (sell while exporting, tariff while importing) is at or below this, devices run regardless of the power budget. Default 0.15.",
           "override_minutes": "When you change a managed device by hand, the manager leaves it alone for this long. Default 30 min."
         }
       }
@@ -45,23 +45,23 @@
         "title": "Hub settings",
         "description": "Sensors and global thresholds shared by all managed devices.",
         "data": {
-          "surplus_sensor": "PV surplus sensor [W]",
-          "price_sensor": "Current price sensor",
-          "price_min_sensor": "Minimum price today sensor",
-          "price_max_sensor": "Maximum price today sensor",
-          "smoothing_seconds": "Surplus smoothing window [s]",
+          "hourly_balance_sensor": "Hourly PV balance sensor [kWh]",
+          "sell_price_sensor": "Sell price sensor (RCE)",
+          "buy_price_sensor": "Buy price (tariff) sensor",
+          "buy_price_attribute": "Buy price attribute",
+          "smoothing_seconds": "Net power smoothing window [s]",
           "import_tolerance": "Grid import tolerance [W]",
-          "cheap_score": "Cheap price score threshold (0-1)",
+          "cheap_price": "Cheap energy threshold [price/kWh]",
           "override_minutes": "Manual override backoff [min]"
         },
         "data_description": {
-          "surplus_sensor": "Instantaneous production minus consumption in watts. Positive = exporting. Use the raw sensor - smoothing is applied internally.",
-          "price_sensor": "Current energy price (e.g. RCE PSE Price). Any currency/unit, it is only compared against today's min/max.",
-          "price_min_sensor": "Today's lowest hourly price (e.g. RCE PSE Minimum Price Today).",
-          "price_max_sensor": "Today's highest hourly price (e.g. RCE PSE Maximum Price Today).",
-          "smoothing_seconds": "Moving-average window for the surplus. Larger = calmer but slower reactions to clouds. Default 300 s.",
-          "import_tolerance": "How many watts may be drawn from the grid before loads are shed. Also compensates estimated (not measured) consumption. Default 300 W.",
-          "cheap_score": "Price score is today's price position: 0 = cheapest hour, 1 = most expensive. At or below this threshold devices run regardless of sun. Default 0.1.",
+          "hourly_balance_sensor": "Net production minus consumption accumulated in the current hour, in kWh (resets each hour). Positive = net exporter so far. This drives both the power budget and which price applies.",
+          "sell_price_sensor": "What one exported kWh earns you (e.g. RCE PSE Price). Used as the marginal cost while the hour's balance is positive - consuming then only forgoes this revenue.",
+          "buy_price_sensor": "Your time-of-day import tariff. Used as the marginal cost once the hour's balance goes negative.",
+          "buy_price_attribute": "If the tariff sensor's state is not numeric, read the price from this attribute (default: 'price').",
+          "smoothing_seconds": "Smoothing window for the net power derived from the hourly balance. Larger = calmer but slower reactions. Default 300 s.",
+          "import_tolerance": "How many watts of grid import to tolerate before shedding loads. Also absorbs estimation error in consumption. Default 300 W.",
+          "cheap_price": "When the marginal price (sell while exporting, tariff while importing) is at or below this, devices run regardless of the power budget. Default 0.15.",
           "override_minutes": "When you change a managed device by hand, the manager leaves it alone for this long. Default 30 min."
         }
       },
@@ -74,10 +74,10 @@
           "device_type": "Device type",
           "min_on_minutes": "Minimum on time [min]",
           "min_off_minutes": "Minimum off time [min]",
-          "block_score": "Block above price score",
           "must_run_enabled": "Guaranteed run window",
           "must_run_start": "Window start",
-          "must_run_end": "Window end"
+          "must_run_end": "Window end",
+          "max_price": "Maximum marginal price [price/kWh]"
         },
         "data_description": {
           "name": "Shown in entity names and used in the boost service. Renaming later creates new entities.",
@@ -85,10 +85,10 @@
           "device_type": "switch: anything with on/off. climate: thermostat controlled via HVAC mode. tesla: EV charging with amp modulation.",
           "min_on_minutes": "Once started, the device keeps running at least this long - protects compressors and heaters from short cycling.",
           "min_off_minutes": "Once stopped, the device stays off at least this long before the manager may restart it.",
-          "block_score": "The device will not start when the price score exceeds this value (0 = cheapest hour, 1 = most expensive). 1.01 disables the block.",
           "must_run_enabled": "Force the device on daily within the window below, regardless of sun and price - a comfort guarantee.",
           "must_run_start": "Window start (local time). A window crossing midnight is supported.",
-          "must_run_end": "Window end (local time)."
+          "must_run_end": "Window end (local time).",
+          "max_price": "The device will not start when the current marginal price (RCE while net-exporting, tariff while importing) exceeds this. 999 = no limit. Example: 0.3 lets the hot tub run on surplus or off-peak, never at peak tariff."
         }
       },
       "edit_device": {
@@ -100,20 +100,20 @@
           "device_type": "Device type",
           "min_on_minutes": "Minimum on time [min]",
           "min_off_minutes": "Minimum off time [min]",
-          "block_score": "Block above price score",
           "must_run_enabled": "Guaranteed run window",
           "must_run_start": "Window start",
-          "must_run_end": "Window end"
+          "must_run_end": "Window end",
+          "max_price": "Maximum marginal price [price/kWh]"
         },
         "data_description": {
           "priority": "1 = served first. When surplus shrinks, the highest number is shed first.",
           "device_type": "switch: anything with on/off. climate: thermostat controlled via HVAC mode. tesla: EV charging with amp modulation.",
           "min_on_minutes": "Once started, the device keeps running at least this long - protects compressors and heaters from short cycling.",
           "min_off_minutes": "Once stopped, the device stays off at least this long before the manager may restart it.",
-          "block_score": "The device will not start when the price score exceeds this value (0 = cheapest hour, 1 = most expensive). 1.01 disables the block.",
           "must_run_enabled": "Force the device on daily within the window below, regardless of sun and price - a comfort guarantee.",
           "must_run_start": "Window start (local time). A window crossing midnight is supported.",
-          "must_run_end": "Window end (local time)."
+          "must_run_end": "Window end (local time).",
+          "max_price": "The device will not start when the current marginal price (RCE while net-exporting, tariff while importing) exceeds this. 999 = no limit. Example: 0.3 lets the hot tub run on surplus or off-peak, never at peak tariff."
         }
       },
       "onoff": {

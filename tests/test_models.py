@@ -13,7 +13,7 @@ from models import (  # noqa: E402
     DeviceInput,
     allocate,
     in_window,
-    price_score,
+    marginal_price,
 )
 
 NOW = datetime(2026, 7, 2, 12, 0, 0)
@@ -30,20 +30,25 @@ def inp(**kw):
     return DeviceInput(**defaults)
 
 
-def run(pairs, surplus, score=0.5, cheap=0.1, tolerance=300):
-    return allocate(pairs, surplus, score, cheap, tolerance, NOW)
+def run(pairs, surplus, price=0.5, cheap=0.15, tolerance=300):
+    return allocate(pairs, surplus, price, cheap, tolerance, NOW)
 
 
-# --- price score -----------------------------------------------------------
+# --- marginal price --------------------------------------------------------
 
-def test_price_score_normalizes():
-    assert price_score(0.72, 0.57, 1.55) == round((0.72 - 0.57) / 0.98, 10) or True
-    assert abs(price_score(0.72, 0.57, 1.55) - 0.1530612) < 1e-4
-    assert price_score(0.57, 0.57, 1.55) == 0.0
-    assert price_score(1.55, 0.57, 1.55) == 1.0
-    assert price_score(2.0, 0.57, 1.55) == 1.0  # clamped
-    assert price_score(None, 0.57, 1.55) is None
-    assert price_score(1.0, 1.0, 1.0) is None  # degenerate range
+def test_marginal_price_exporting_uses_sell():
+    assert marginal_price(0.5, 0.10, 0.62) == (0.10, "sell")
+
+
+def test_marginal_price_importing_uses_buy():
+    assert marginal_price(-0.3, 0.10, 0.62) == (0.62, "buy")
+    assert marginal_price(0.0, 0.10, 0.62) == (0.62, "buy")
+
+
+def test_marginal_price_missing_inputs():
+    assert marginal_price(None, 0.10, 0.62) == (0.62, "buy")
+    assert marginal_price(0.5, None, 0.62) == (0.62, "buy")
+    assert marginal_price(-1.0, 0.10, None) == (None, "unknown")
 
 
 # --- windows ---------------------------------------------------------------
@@ -88,14 +93,14 @@ def test_shed_on_import():
 
 def test_cheap_price_forces_on():
     d1 = dev("cwu", 1, 1500)
-    decisions = run([(d1, inp())], surplus=0, score=0.05)
+    decisions = run([(d1, inp())], surplus=0, price=0.05)
     assert decisions["cwu"].should_be_on
     assert decisions["cwu"].reason == "running_cheap"
 
 
-def test_block_score_blocks_cheap_and_surplus():
-    d1 = dev("cwu", 1, 1500, block_score=0.6)
-    decisions = run([(d1, inp())], surplus=5000, score=0.9)
+def test_max_price_blocks_cheap_and_surplus():
+    d1 = dev("cwu", 1, 1500, max_price=0.6)
+    decisions = run([(d1, inp())], surplus=5000, price=0.9)
     assert not decisions["cwu"].should_be_on
     assert decisions["cwu"].reason == "price_blocked"
 
@@ -115,7 +120,7 @@ def test_anti_cycle_on_and_off():
 def test_must_run_window():
     d1 = dev("cwu", 1, 1500, must_run_enabled=True,
              must_run_start=time(11), must_run_end=time(13))
-    decisions = run([(d1, inp())], surplus=-5000, score=0.9)
+    decisions = run([(d1, inp())], surplus=-5000, price=0.9)
     assert decisions["cwu"].should_be_on
     assert decisions["cwu"].reason == "must_run"
 
@@ -173,7 +178,7 @@ def test_tesla_cable_disconnected():
 
 def test_tesla_cheap_full_power():
     t = tesla()
-    decisions = run([(t, inp())], surplus=0, score=0.0)
+    decisions = run([(t, inp())], surplus=0, price=0.0)
     assert decisions["tesla"].should_be_on
     assert decisions["tesla"].target_amps == 16
 

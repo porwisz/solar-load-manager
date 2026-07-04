@@ -20,7 +20,7 @@ async def async_setup_entry(
     coordinator: SlmCoordinator = hass.data[DOMAIN][entry.entry_id]
     entities: list[SensorEntity] = [
         SlmSurplusSensor(coordinator, entry),
-        SlmPriceScoreSensor(coordinator, entry),
+        SlmMarginalPriceSensor(coordinator, entry),
     ]
     entities.extend(
         SlmDeviceStatusSensor(coordinator, entry, cfg) for cfg in coordinator.devices
@@ -57,21 +57,37 @@ class SlmSurplusSensor(SlmHubSensor):
 
     @property
     def extra_state_attributes(self) -> dict:
-        return {"raw_surplus": (self.coordinator.data or {}).get("raw_surplus")}
+        data = self.coordinator.data or {}
+        return {
+            "hourly_balance_kwh": data.get("balance_kwh"),
+            "bank_w": data.get("bank_w"),
+            "budget_w": data.get("budget_w"),
+        }
 
 
-class SlmPriceScoreSensor(SlmHubSensor):
-    _attr_name = "Price score"
+class SlmMarginalPriceSensor(SlmHubSensor):
+    """Cost of one extra kWh right now under hourly net-billing."""
+
+    _attr_name = "Marginal price"
     _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_icon = "mdi:chart-bell-curve"
+    _attr_icon = "mdi:cash"
 
     def __init__(self, coordinator: SlmCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator, entry, "price_score")
 
     @property
     def native_value(self) -> float | None:
-        value = (self.coordinator.data or {}).get("price_score")
-        return round(value, 3) if value is not None else None
+        value = (self.coordinator.data or {}).get("price")
+        return round(value, 4) if value is not None else None
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        data = self.coordinator.data or {}
+        return {
+            "source": data.get("price_source"),
+            "sell_price": data.get("sell_price"),
+            "buy_price": data.get("buy_price"),
+        }
 
 
 class SlmDeviceStatusSensor(CoordinatorEntity[SlmCoordinator], SensorEntity):

@@ -17,7 +17,7 @@ class DeviceConfig:
     on_factor: float = 1.1
     min_on_minutes: float = 15.0
     min_off_minutes: float = 10.0
-    block_score: float = 1.01
+    max_price: float = 999.0  # do not start above this marginal price [PLN/kWh]
     hvac_mode: str = "heat"
     must_run_enabled: bool = False
     must_run_start: time | None = None
@@ -72,11 +72,23 @@ class Decision:
     reason: str
 
 
-def price_score(price: float | None, low: float | None, high: float | None) -> float | None:
-    """Normalize price to 0..1 within today's range. None when not computable."""
-    if price is None or low is None or high is None or high <= low:
-        return None
-    return min(1.0, max(0.0, (price - low) / (high - low)))
+def marginal_price(
+    hourly_balance_kwh: float | None,
+    sell_price: float | None,
+    buy_price: float | None,
+) -> tuple[float | None, str]:
+    """Cost of one extra kWh under hourly net-billing.
+
+    While the hour's balance is positive the house is a net exporter, so
+    extra consumption only forgoes the sell (RCE) price; once net-importing,
+    it costs the tariff (buy) price. Returns (price, source).
+    """
+    if hourly_balance_kwh is not None and hourly_balance_kwh > 0:
+        if sell_price is not None:
+            return sell_price, "sell"
+    if buy_price is not None:
+        return buy_price, "buy"
+    return None, "unknown"
 
 
 def in_window(now: datetime, start: time | None, end: time | None) -> bool:
@@ -92,8 +104,8 @@ def in_window(now: datetime, start: time | None, end: time | None) -> bool:
 def allocate(
     devices: list[tuple[DeviceConfig, DeviceInput]],
     surplus_w: float,
-    score: float | None,
-    cheap_score: float,
+    price: float | None,
+    cheap_price: float,
     import_tolerance: float,
     now: datetime,
 ) -> dict[str, Decision]:
@@ -107,8 +119,8 @@ def allocate(
     one does.
     """
     ordered = sorted(devices, key=lambda pair: pair[0].priority)
-    effective_score = 0.5 if score is None else score
-    cheap = effective_score <= cheap_score
+    effective_price = 999.0 if price is None else price
+    cheap = effective_price <= cheap_price
 
     budget = surplus_w + import_tolerance
     for cfg, inp in ordered:
@@ -122,7 +134,7 @@ def allocate(
             forced_reason = "boost"
         elif cfg.must_run_enabled and in_window(now, cfg.must_run_start, cfg.must_run_end):
             forced_reason = "must_run"
-        elif cheap and effective_score <= cfg.block_score:
+        elif cheap and effective_price <= cfg.max_price:
             forced_reason = "running_cheap"
 
         if not inp.enabled or not inp.available:
@@ -142,7 +154,7 @@ def allocate(
             decisions[cfg.name] = Decision(True, claim, amps, forced_reason)
             continue
 
-        if effective_score > cfg.block_score:
+        if effective_price > cfg.max_price:
             decisions[cfg.name] = _guarded_off(cfg, inp, "price_blocked")
             budget -= decisions[cfg.name].allocated_w
             continue

@@ -10,16 +10,17 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
 from .const import (
-    CONF_CHEAP_SCORE,
+    CONF_BUY_PRICE_ATTRIBUTE,
+    CONF_BUY_PRICE_SENSOR,
+    CONF_CHEAP_PRICE,
     CONF_DEVICES,
+    CONF_HOURLY_BALANCE_SENSOR,
     CONF_IMPORT_TOLERANCE,
     CONF_OVERRIDE_MINUTES,
-    CONF_PRICE_MAX_SENSOR,
-    CONF_PRICE_MIN_SENSOR,
+    CONF_SELL_PRICE_SENSOR,
     CONF_PRICE_SENSOR,
     CONF_SMOOTHING_SECONDS,
-    CONF_SURPLUS_SENSOR,
-    DEFAULT_CHEAP_SCORE,
+    DEFAULT_CHEAP_PRICE,
     DEFAULT_IMPORT_TOLERANCE,
     DEFAULT_OVERRIDE_MINUTES,
     DEFAULT_SMOOTHING_SECONDS,
@@ -28,7 +29,7 @@ from .const import (
     DOMAIN,
     UPDATE_INTERVAL_SECONDS,
 )
-from .models import Decision, DeviceConfig, DeviceInput, allocate, price_score
+from .models import Decision, DeviceConfig, DeviceInput, allocate, marginal_price
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -52,8 +53,10 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
         )
         self.entry = entry
         self.devices = device_configs_from_entry(entry)
+        # net power derived from the hourly balance sensor
         self._ema: float | None = None
-        self._ema_ts: datetime | None = None
+        self._last_balance: float | None = None
+        self._last_balance_ts: datetime | None = None
         # runtime state, keyed by device name
         self.enabled: dict[str, bool] = {d.name: False for d in self.devices}
         self._last_command: dict[str, tuple[bool, datetime]] = {}
@@ -65,16 +68,26 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
     def _conf(self, key: str, default):
         return self.entry.options.get(key, self.entry.data.get(key, default))
 
-    def _float_state(self, entity_id: str | None) -> float | None:
+    def _float_state(self, entity_id: str | None, attribute: str | None = None) -> float | None:
         if not entity_id:
             return None
         state = self.hass.states.get(entity_id)
         if state is None or state.state in ("unknown", "unavailable"):
             return None
+        value = state.attributes.get(attribute) if attribute else state.state
         try:
-            return float(state.state)
-        except ValueError:
+            return float(value)
+        except (TypeError, ValueError):
             return None
+
+    def _buy_price(self) -> float | None:
+        """Tariff price: numeric state, or the configured attribute (e.g. 'price')."""
+        entity_id = self._conf(CONF_BUY_PRICE_SENSOR, None)
+        direct = self._float_state(entity_id)
+        if direct is not None:
+            return direct
+        attribute = self._conf(CONF_BUY_PRICE_ATTRIBUTE, "price")
+        return self._float_state(entity_id, attribute)
 
     def _device_is_on(self, cfg: DeviceConfig) -> bool | None:
         entity = cfg.charge_switch if cfg.device_type == DEVICE_TYPE_TESLA else cfg.entity
@@ -95,14 +108,21 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
         now_utc = dt_util.utcnow()
         now_local = dt_util.now()
 
-        raw_surplus = self._float_state(self._conf(CONF_SURPLUS_SENSOR, None))
-        surplus = self._update_ema(raw_surplus, now_utc)
+        balance_kwh = self._float_state(self._conf(CONF_HOURLY_BALANCE_SENSOR, None))
+        net_w = self._update_net_power(balance_kwh, now_local)
 
-        score = price_score(
-            self._float_state(self._conf(CONF_PRICE_SENSOR, None)),
-            self._float_state(self._conf(CONF_PRICE_MIN_SENSOR, None)),
-            self._float_state(self._conf(CONF_PRICE_MAX_SENSOR, None)),
+        # Banked hourly balance, spread over the rest of the hour: under
+        # hourly net-billing, surplus accumulated earlier this hour can be
+        # consumed until the hour ends without paying the tariff.
+        remaining_h = max(0.1, (60 - now_local.minute) / 60)
+        bank_w = (balance_kwh or 0.0) * 1000 / remaining_h
+        budget_w = (net_w if net_w is not None else 0.0) + bank_w
+
+        sell_price = self._float_state(
+            self._conf(CONF_SELL_PRICE_SENSOR, self._conf(CONF_PRICE_SENSOR, None))
         )
+        buy_price = self._buy_price()
+        price, price_source = marginal_price(balance_kwh, sell_price, buy_price)
 
         override_minutes = float(self._conf(CONF_OVERRIDE_MINUTES, DEFAULT_OVERRIDE_MINUTES))
         pairs: list[tuple[DeviceConfig, DeviceInput]] = []
@@ -148,36 +168,48 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
 
         decisions = allocate(
             pairs,
-            surplus if surplus is not None else 0.0,
-            score,
-            float(self._conf(CONF_CHEAP_SCORE, DEFAULT_CHEAP_SCORE)),
+            budget_w,
+            price,
+            float(self._conf(CONF_CHEAP_PRICE, DEFAULT_CHEAP_PRICE)),
             float(self._conf(CONF_IMPORT_TOLERANCE, DEFAULT_IMPORT_TOLERANCE)),
             now_local,
         )
 
-        if surplus is not None:
+        if balance_kwh is not None:
             for cfg, inp in pairs:
                 await self._apply(cfg, inp, decisions[cfg.name], now_utc)
 
         return {
-            "surplus": surplus,
-            "raw_surplus": raw_surplus,
-            "price_score": score,
+            "surplus": net_w,
+            "balance_kwh": balance_kwh,
+            "bank_w": round(bank_w) if balance_kwh is not None else None,
+            "budget_w": round(budget_w) if balance_kwh is not None else None,
+            "price": price,
+            "price_source": price_source,
+            "sell_price": sell_price,
+            "buy_price": buy_price,
             "decisions": decisions,
             "inputs": {cfg.name: inp for cfg, inp in pairs},
         }
 
-    def _update_ema(self, raw: float | None, now: datetime) -> float | None:
-        if raw is None:
+    def _update_net_power(self, balance_kwh: float | None, now: datetime) -> float | None:
+        """Derive smoothed net power [W] from the hourly balance sensor."""
+        if balance_kwh is None:
             return self._ema
-        window = float(self._conf(CONF_SMOOTHING_SECONDS, DEFAULT_SMOOTHING_SECONDS))
-        if self._ema is None or self._ema_ts is None or window <= 0:
-            self._ema = raw
-        else:
-            dt = (now - self._ema_ts).total_seconds()
-            alpha = dt / (window + dt)
-            self._ema += alpha * (raw - self._ema)
-        self._ema_ts = now
+        if self._last_balance is not None and self._last_balance_ts is not None:
+            dt = (now - self._last_balance_ts).total_seconds()
+            # Skip the sample when the hour rolled over (sensor resets) or
+            # time didn't advance.
+            if 0 < dt < 1800 and now.hour == self._last_balance_ts.hour:
+                raw_w = (balance_kwh - self._last_balance) * 3_600_000 / dt
+                window = float(self._conf(CONF_SMOOTHING_SECONDS, DEFAULT_SMOOTHING_SECONDS))
+                if self._ema is None or window <= 0:
+                    self._ema = raw_w
+                else:
+                    alpha = dt / (window + dt)
+                    self._ema += alpha * (raw_w - self._ema)
+        self._last_balance = balance_kwh
+        self._last_balance_ts = now
         return self._ema
 
     # -- actuation ---------------------------------------------------------

@@ -11,11 +11,15 @@ from homeassistant.core import callback
 from homeassistant.helpers import selector
 
 from .const import (
-    CONF_BLOCK_SCORE,
+    CONF_BUY_PRICE_ATTRIBUTE,
+    CONF_BUY_PRICE_SENSOR,
+    CONF_CHEAP_PRICE,
+    CONF_HOURLY_BALANCE_SENSOR,
+    CONF_MAX_PRICE,
+    CONF_SELL_PRICE_SENSOR,
     CONF_CABLE_SENSOR,
     CONF_CHARGE_SWITCH,
     CONF_CHARGER_POWER_SENSOR,
-    CONF_CHEAP_SCORE,
     CONF_CURRENT_NUMBER,
     CONF_DEVICE_TYPE,
     CONF_DEVICES,
@@ -33,16 +37,12 @@ from .const import (
     CONF_ON_FACTOR,
     CONF_OVERRIDE_MINUTES,
     CONF_PHASES,
-    CONF_PRICE_MAX_SENSOR,
-    CONF_PRICE_MIN_SENSOR,
-    CONF_PRICE_SENSOR,
     CONF_PRIORITY,
     CONF_RATED_POWER,
     CONF_SMOOTHING_SECONDS,
-    CONF_SURPLUS_SENSOR,
     CONF_VOLTAGE,
-    DEFAULT_BLOCK_SCORE,
-    DEFAULT_CHEAP_SCORE,
+    DEFAULT_CHEAP_PRICE,
+    DEFAULT_MAX_PRICE,
     DEFAULT_IMPORT_TOLERANCE,
     DEFAULT_MAX_AMPS,
     DEFAULT_MIN_AMPS,
@@ -82,7 +82,7 @@ def device_from_dict(data: dict[str, Any]) -> DeviceConfig:
         on_factor=float(data.get(CONF_ON_FACTOR, DEFAULT_ON_FACTOR)),
         min_on_minutes=float(data.get(CONF_MIN_ON, DEFAULT_MIN_ON)),
         min_off_minutes=float(data.get(CONF_MIN_OFF, DEFAULT_MIN_OFF)),
-        block_score=float(data.get(CONF_BLOCK_SCORE, DEFAULT_BLOCK_SCORE)),
+        max_price=float(data.get(CONF_MAX_PRICE, DEFAULT_MAX_PRICE)),
         hvac_mode=data.get(CONF_HVAC_MODE, "heat"),
         must_run_enabled=bool(data.get(CONF_MUST_RUN_ENABLED, False)),
         must_run_start=_parse_time(data.get(CONF_MUST_RUN_START)),
@@ -104,13 +104,13 @@ def _sensor_selector() -> selector.EntitySelector:
 
 HUB_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_SURPLUS_SENSOR): _sensor_selector(),
-        vol.Required(CONF_PRICE_SENSOR): _sensor_selector(),
-        vol.Required(CONF_PRICE_MIN_SENSOR): _sensor_selector(),
-        vol.Required(CONF_PRICE_MAX_SENSOR): _sensor_selector(),
+        vol.Required(CONF_HOURLY_BALANCE_SENSOR): _sensor_selector(),
+        vol.Required(CONF_SELL_PRICE_SENSOR): _sensor_selector(),
+        vol.Required(CONF_BUY_PRICE_SENSOR): _sensor_selector(),
+        vol.Optional(CONF_BUY_PRICE_ATTRIBUTE, default="price"): str,
         vol.Optional(CONF_SMOOTHING_SECONDS, default=DEFAULT_SMOOTHING_SECONDS): vol.Coerce(int),
         vol.Optional(CONF_IMPORT_TOLERANCE, default=DEFAULT_IMPORT_TOLERANCE): vol.Coerce(float),
-        vol.Optional(CONF_CHEAP_SCORE, default=DEFAULT_CHEAP_SCORE): vol.Coerce(float),
+        vol.Optional(CONF_CHEAP_PRICE, default=DEFAULT_CHEAP_PRICE): vol.Coerce(float),
         vol.Optional(CONF_OVERRIDE_MINUTES, default=DEFAULT_OVERRIDE_MINUTES): vol.Coerce(float),
     }
 )
@@ -185,7 +185,7 @@ class SlmOptionsFlow(OptionsFlow):
                     CONF_MIN_OFF, default=e.get(CONF_MIN_OFF, DEFAULT_MIN_OFF)
                 ): vol.Coerce(float),
                 vol.Optional(
-                    CONF_BLOCK_SCORE, default=e.get(CONF_BLOCK_SCORE, DEFAULT_BLOCK_SCORE)
+                    CONF_MAX_PRICE, default=e.get(CONF_MAX_PRICE, DEFAULT_MAX_PRICE)
                 ): vol.Coerce(float),
                 vol.Optional(
                     CONF_MUST_RUN_ENABLED, default=e.get(CONF_MUST_RUN_ENABLED, False)

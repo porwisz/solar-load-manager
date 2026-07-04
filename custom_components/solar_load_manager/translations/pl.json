@@ -5,23 +5,23 @@
         "title": "Solar Load Manager",
         "description": "Wskaż czujniki nadwyżki PV i cen dynamicznych. Urządzenia dodasz później przez menu Konfiguruj tego wpisu.",
         "data": {
-          "surplus_sensor": "Czujnik nadwyżki PV [W]",
-          "price_sensor": "Czujnik aktualnej ceny",
-          "price_min_sensor": "Czujnik minimalnej ceny dziś",
-          "price_max_sensor": "Czujnik maksymalnej ceny dziś",
-          "smoothing_seconds": "Okno wygładzania nadwyżki [s]",
+          "hourly_balance_sensor": "Czujnik bilansu godzinowego PV [kWh]",
+          "sell_price_sensor": "Czujnik ceny sprzedaży (RCE)",
+          "buy_price_sensor": "Czujnik ceny zakupu (taryfa)",
+          "buy_price_attribute": "Atrybut ceny zakupu",
+          "smoothing_seconds": "Okno wygładzania mocy netto [s]",
           "import_tolerance": "Tolerancja importu z sieci [W]",
-          "cheap_score": "Próg taniej energii (score 0-1)",
+          "cheap_price": "Próg taniej energii [cena/kWh]",
           "override_minutes": "Pauza po ręcznej zmianie [min]"
         },
         "data_description": {
-          "surplus_sensor": "Chwilowa produkcja minus zużycie w watach. Dodatnia = eksport. Podaj surowy czujnik - wygładzanie robi integracja.",
-          "price_sensor": "Aktualna cena energii (np. RCE PSE Price). Dowolna waluta/jednostka - porównywana tylko z dzisiejszym min/max.",
-          "price_min_sensor": "Najniższa godzinowa cena dziś (np. RCE PSE Minimum Price Today).",
-          "price_max_sensor": "Najwyższa godzinowa cena dziś (np. RCE PSE Maximum Price Today).",
-          "smoothing_seconds": "Okno średniej ruchomej nadwyżki. Większe = spokojniej, ale wolniejsza reakcja na chmury. Domyślnie 300 s.",
-          "import_tolerance": "Ile watów można pobrać z sieci zanim urządzenia zaczną być wyłączane. Kompensuje też szacowane (niemierzone) zużycie. Domyślnie 300 W.",
-          "cheap_score": "Score ceny to pozycja w dzisiejszym zakresie: 0 = najtańsza godzina, 1 = najdroższa. Na progu lub poniżej urządzenia działają niezależnie od słońca. Domyślnie 0.1.",
+          "hourly_balance_sensor": "Produkcja minus zużycie narastająco w bieżącej godzinie, w kWh (reset co godzinę). Dodatni = na razie eksport netto. Steruje budżetem mocy i tym, która cena obowiązuje.",
+          "sell_price_sensor": "Ile zarabia 1 kWh oddana do sieci (np. RCE PSE Price). Koszt krańcowy, dopóki bilans godziny jest dodatni - zużycie oznacza tylko utratę tego przychodu.",
+          "buy_price_sensor": "Twoja taryfa zakupu (strefy czasowe). Koszt krańcowy, gdy bilans godziny spadnie poniżej zera.",
+          "buy_price_attribute": "Jeśli stan czujnika taryfy nie jest liczbą, cena czytana jest z tego atrybutu (domyślnie 'price').",
+          "smoothing_seconds": "Okno wygładzania mocy netto wyliczanej z bilansu godzinowego. Większe = spokojniej, ale wolniej. Domyślnie 300 s.",
+          "import_tolerance": "Ile watów importu z sieci tolerować zanim urządzenia będą wyłączane. Pochłania też błąd szacowania zużycia. Domyślnie 300 W.",
+          "cheap_price": "Gdy cena krańcowa (RCE przy eksporcie, taryfa przy imporcie) jest na progu lub niżej, urządzenia działają niezależnie od budżetu mocy. Domyślnie 0.15.",
           "override_minutes": "Po ręcznej zmianie urządzenia menedżer nie rusza go przez ten czas. Domyślnie 30 min."
         }
       }
@@ -45,23 +45,23 @@
         "title": "Ustawienia huba",
         "description": "Czujniki i progi wspólne dla wszystkich urządzeń.",
         "data": {
-          "surplus_sensor": "Czujnik nadwyżki PV [W]",
-          "price_sensor": "Czujnik aktualnej ceny",
-          "price_min_sensor": "Czujnik minimalnej ceny dziś",
-          "price_max_sensor": "Czujnik maksymalnej ceny dziś",
-          "smoothing_seconds": "Okno wygładzania nadwyżki [s]",
+          "hourly_balance_sensor": "Czujnik bilansu godzinowego PV [kWh]",
+          "sell_price_sensor": "Czujnik ceny sprzedaży (RCE)",
+          "buy_price_sensor": "Czujnik ceny zakupu (taryfa)",
+          "buy_price_attribute": "Atrybut ceny zakupu",
+          "smoothing_seconds": "Okno wygładzania mocy netto [s]",
           "import_tolerance": "Tolerancja importu z sieci [W]",
-          "cheap_score": "Próg taniej energii (score 0-1)",
+          "cheap_price": "Próg taniej energii [cena/kWh]",
           "override_minutes": "Pauza po ręcznej zmianie [min]"
         },
         "data_description": {
-          "surplus_sensor": "Chwilowa produkcja minus zużycie w watach. Dodatnia = eksport. Podaj surowy czujnik - wygładzanie robi integracja.",
-          "price_sensor": "Aktualna cena energii (np. RCE PSE Price). Dowolna waluta/jednostka - porównywana tylko z dzisiejszym min/max.",
-          "price_min_sensor": "Najniższa godzinowa cena dziś (np. RCE PSE Minimum Price Today).",
-          "price_max_sensor": "Najwyższa godzinowa cena dziś (np. RCE PSE Maximum Price Today).",
-          "smoothing_seconds": "Okno średniej ruchomej nadwyżki. Większe = spokojniej, ale wolniejsza reakcja na chmury. Domyślnie 300 s.",
-          "import_tolerance": "Ile watów można pobrać z sieci zanim urządzenia zaczną być wyłączane. Kompensuje też szacowane (niemierzone) zużycie. Domyślnie 300 W.",
-          "cheap_score": "Score ceny to pozycja w dzisiejszym zakresie: 0 = najtańsza godzina, 1 = najdroższa. Na progu lub poniżej urządzenia działają niezależnie od słońca. Domyślnie 0.1.",
+          "hourly_balance_sensor": "Produkcja minus zużycie narastająco w bieżącej godzinie, w kWh (reset co godzinę). Dodatni = na razie eksport netto. Steruje budżetem mocy i tym, która cena obowiązuje.",
+          "sell_price_sensor": "Ile zarabia 1 kWh oddana do sieci (np. RCE PSE Price). Koszt krańcowy, dopóki bilans godziny jest dodatni - zużycie oznacza tylko utratę tego przychodu.",
+          "buy_price_sensor": "Twoja taryfa zakupu (strefy czasowe). Koszt krańcowy, gdy bilans godziny spadnie poniżej zera.",
+          "buy_price_attribute": "Jeśli stan czujnika taryfy nie jest liczbą, cena czytana jest z tego atrybutu (domyślnie 'price').",
+          "smoothing_seconds": "Okno wygładzania mocy netto wyliczanej z bilansu godzinowego. Większe = spokojniej, ale wolniej. Domyślnie 300 s.",
+          "import_tolerance": "Ile watów importu z sieci tolerować zanim urządzenia będą wyłączane. Pochłania też błąd szacowania zużycia. Domyślnie 300 W.",
+          "cheap_price": "Gdy cena krańcowa (RCE przy eksporcie, taryfa przy imporcie) jest na progu lub niżej, urządzenia działają niezależnie od budżetu mocy. Domyślnie 0.15.",
           "override_minutes": "Po ręcznej zmianie urządzenia menedżer nie rusza go przez ten czas. Domyślnie 30 min."
         }
       },
@@ -74,10 +74,10 @@
           "device_type": "Typ urządzenia",
           "min_on_minutes": "Minimalny czas pracy [min]",
           "min_off_minutes": "Minimalny czas postoju [min]",
-          "block_score": "Blokada powyżej score ceny",
           "must_run_enabled": "Okno gwarantowanej pracy",
           "must_run_start": "Początek okna",
-          "must_run_end": "Koniec okna"
+          "must_run_end": "Koniec okna",
+          "max_price": "Maksymalna cena krańcowa [cena/kWh]"
         },
         "data_description": {
           "name": "Widoczna w nazwach encji i używana w usłudze boost. Późniejsza zmiana nazwy tworzy nowe encje.",
@@ -85,10 +85,10 @@
           "device_type": "switch: cokolwiek z wł./wył. climate: termostat sterowany trybem HVAC. tesla: ładowanie EV z modulacją amperażu.",
           "min_on_minutes": "Po włączeniu urządzenie pracuje co najmniej tyle - chroni sprężarki i grzałki przed cyklowaniem.",
           "min_off_minutes": "Po wyłączeniu urządzenie odpoczywa co najmniej tyle zanim menedżer może je ponownie włączyć.",
-          "block_score": "Urządzenie nie włączy się, gdy score ceny przekracza tę wartość (0 = najtańsza godzina, 1 = najdroższa). 1.01 wyłącza blokadę.",
           "must_run_enabled": "Wymuś codzienną pracę w poniższym oknie, niezależnie od słońca i ceny - gwarancja komfortu.",
           "must_run_start": "Początek okna (czas lokalny). Okno przechodzące przez północ jest obsługiwane.",
-          "must_run_end": "Koniec okna (czas lokalny)."
+          "must_run_end": "Koniec okna (czas lokalny).",
+          "max_price": "Urządzenie nie włączy się, gdy aktualna cena krańcowa (RCE przy eksporcie netto, taryfa przy imporcie) przekracza tę wartość. 999 = bez limitu. Przykład: 0.3 pozwala jacuzzi grzać z nadwyżki lub poza szczytem, nigdy w szczycie taryfy."
         }
       },
       "edit_device": {
@@ -100,20 +100,20 @@
           "device_type": "Typ urządzenia",
           "min_on_minutes": "Minimalny czas pracy [min]",
           "min_off_minutes": "Minimalny czas postoju [min]",
-          "block_score": "Blokada powyżej score ceny",
           "must_run_enabled": "Okno gwarantowanej pracy",
           "must_run_start": "Początek okna",
-          "must_run_end": "Koniec okna"
+          "must_run_end": "Koniec okna",
+          "max_price": "Maksymalna cena krańcowa [cena/kWh]"
         },
         "data_description": {
           "priority": "1 = obsługiwany pierwszy. Gdy nadwyżka maleje, najwyższy numer jest wyłączany pierwszy.",
           "device_type": "switch: cokolwiek z wł./wył. climate: termostat sterowany trybem HVAC. tesla: ładowanie EV z modulacją amperażu.",
           "min_on_minutes": "Po włączeniu urządzenie pracuje co najmniej tyle - chroni sprężarki i grzałki przed cyklowaniem.",
           "min_off_minutes": "Po wyłączeniu urządzenie odpoczywa co najmniej tyle zanim menedżer może je ponownie włączyć.",
-          "block_score": "Urządzenie nie włączy się, gdy score ceny przekracza tę wartość (0 = najtańsza godzina, 1 = najdroższa). 1.01 wyłącza blokadę.",
           "must_run_enabled": "Wymuś codzienną pracę w poniższym oknie, niezależnie od słońca i ceny - gwarancja komfortu.",
           "must_run_start": "Początek okna (czas lokalny). Okno przechodzące przez północ jest obsługiwane.",
-          "must_run_end": "Koniec okna (czas lokalny)."
+          "must_run_end": "Koniec okna (czas lokalny).",
+          "max_price": "Urządzenie nie włączy się, gdy aktualna cena krańcowa (RCE przy eksporcie netto, taryfa przy imporcie) przekracza tę wartość. 999 = bez limitu. Przykład: 0.3 pozwala jacuzzi grzać z nadwyżki lub poza szczytem, nigdy w szczycie taryfy."
         }
       },
       "onoff": {
