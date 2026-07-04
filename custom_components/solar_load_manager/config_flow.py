@@ -246,8 +246,10 @@ class SlmOptionsFlow(OptionsFlow):
                     selector.EntitySelectorConfig(domain="binary_sensor")
                 ),
                 req(CONF_CHARGER_POWER_SENSOR): _sensor_selector(),
-                vol.Optional(CONF_PHASES, default=e.get(CONF_PHASES, DEFAULT_PHASES)): vol.In(
-                    [1, 3]
+                vol.Optional(
+                    CONF_PHASES, default=str(e.get(CONF_PHASES, DEFAULT_PHASES))
+                ): selector.SelectSelector(
+                    selector.SelectSelectorConfig(options=["1", "3"])
                 ),
                 vol.Optional(
                     CONF_VOLTAGE, default=e.get(CONF_VOLTAGE, DEFAULT_VOLTAGE)
