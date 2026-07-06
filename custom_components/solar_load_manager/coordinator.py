@@ -136,6 +136,16 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
                 is_on=bool(is_on),
             )
             last = self._last_command.get(cfg.name)
+            if last is None:
+                # No in-memory command record (fresh start or options reload):
+                # fall back to the entity's own last state change so minimum
+                # on/off times survive reloads and restarts.
+                entity = cfg.charge_switch if cfg.device_type == DEVICE_TYPE_TESLA else cfg.entity
+                state = self.hass.states.get(entity)
+                if state is not None:
+                    inp.minutes_since_command = (
+                        now_utc - state.last_changed
+                    ).total_seconds() / 60
             if last is not None:
                 commanded_on, when = last
                 inp.minutes_since_command = (now_utc - when).total_seconds() / 60
