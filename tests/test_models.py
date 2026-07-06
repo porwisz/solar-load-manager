@@ -30,8 +30,8 @@ def inp(**kw):
     return DeviceInput(**defaults)
 
 
-def run(pairs, surplus, price=0.5, source="sell", cheap=0.15, tolerance=300):
-    return allocate(pairs, surplus, price, source, cheap, tolerance, NOW)
+def run(pairs, surplus, price=0.5, source="sell", cheap=0.15, tolerance=300, exclusive=False):
+    return allocate(pairs, surplus, price, source, cheap, tolerance, NOW, exclusive=exclusive)
 
 
 # --- marginal price --------------------------------------------------------
@@ -208,3 +208,27 @@ def test_higher_priority_preempts_tesla():
     # budget = 2070; cwu needs 1650 -> on; tesla left 570 -> 0 A -> off
     assert decisions["cwu"].should_be_on
     assert not decisions["tesla"].should_be_on
+
+
+def test_exclusive_only_highest_priority_runs():
+    d1, d2 = dev("cwu", 1, 1500), dev("ac", 2, 1000)
+    decisions = run([(d1, inp()), (d2, inp())], surplus=10000, tolerance=0, exclusive=True)
+    assert decisions["cwu"].should_be_on
+    assert not decisions["ac"].should_be_on
+    assert decisions["ac"].reason == "waiting_for_priority"
+
+
+def test_exclusive_lower_priority_runs_when_higher_ineligible():
+    d1 = dev("cwu", 1, 1500, max_price=0.1)  # blocked by price
+    d2 = dev("ac", 2, 1000)
+    decisions = run([(d1, inp()), (d2, inp())], surplus=10000, price=0.5, tolerance=0, exclusive=True)
+    assert not decisions["cwu"].should_be_on
+    assert decisions["ac"].should_be_on
+
+
+def test_exclusive_boost_overrides_slot():
+    d1, d2 = dev("cwu", 1, 1500), dev("ac", 2, 1000)
+    decisions = run([(d1, inp()), (d2, inp(boost_active=True))], surplus=10000, tolerance=0, exclusive=True)
+    assert decisions["cwu"].should_be_on
+    assert decisions["ac"].should_be_on  # boost bypasses exclusivity
+    assert decisions["ac"].reason == "boost"

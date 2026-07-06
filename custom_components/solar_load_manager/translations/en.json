@@ -12,7 +12,8 @@
           "smoothing_seconds": "Net power smoothing window [s]",
           "import_tolerance": "Grid import tolerance [W]",
           "cheap_price": "Cheap energy threshold [price/kWh]",
-          "override_minutes": "Manual override backoff [min]"
+          "override_minutes": "Manual override backoff [min]",
+          "exclusive_mode": "Exclusive mode (one device at a time)"
         },
         "data_description": {
           "hourly_balance_sensor": "Net production minus consumption accumulated in the current hour, in kWh (resets each hour). Positive = net exporter so far. This drives both the power budget and which price applies.",
@@ -22,7 +23,8 @@
           "smoothing_seconds": "Smoothing window for the net power derived from the hourly balance. Larger = calmer but slower reactions. Default 300 s.",
           "import_tolerance": "How many watts of grid import to tolerate before shedding loads. Also absorbs estimation error in consumption. Default 300 W.",
           "cheap_price": "Applies ONLY while net-exporting: when the sell (RCE) price is at or below this, surplus is burned in devices instead of being sold. Never forces consumption from the grid (unless the price is negative). Default 0.15.",
-          "override_minutes": "When you change a managed device by hand, the manager leaves it alone for this long. Default 30 min."
+          "override_minutes": "When you change a managed device by hand, the manager leaves it alone for this long. Default 30 min.",
+          "exclusive_mode": "Only the highest-priority eligible device runs; the others wait even if the budget would cover them. Boost and guaranteed-run windows still override. Enabled by default."
         }
       }
     },
@@ -52,7 +54,8 @@
           "smoothing_seconds": "Net power smoothing window [s]",
           "import_tolerance": "Grid import tolerance [W]",
           "cheap_price": "Cheap energy threshold [price/kWh]",
-          "override_minutes": "Manual override backoff [min]"
+          "override_minutes": "Manual override backoff [min]",
+          "exclusive_mode": "Exclusive mode (one device at a time)"
         },
         "data_description": {
           "hourly_balance_sensor": "Net production minus consumption accumulated in the current hour, in kWh (resets each hour). Positive = net exporter so far. This drives both the power budget and which price applies.",
@@ -62,7 +65,8 @@
           "smoothing_seconds": "Smoothing window for the net power derived from the hourly balance. Larger = calmer but slower reactions. Default 300 s.",
           "import_tolerance": "How many watts of grid import to tolerate before shedding loads. Also absorbs estimation error in consumption. Default 300 W.",
           "cheap_price": "Applies ONLY while net-exporting: when the sell (RCE) price is at or below this, surplus is burned in devices instead of being sold. Never forces consumption from the grid (unless the price is negative). Default 0.15.",
-          "override_minutes": "When you change a managed device by hand, the manager leaves it alone for this long. Default 30 min."
+          "override_minutes": "When you change a managed device by hand, the manager leaves it alone for this long. Default 30 min.",
+          "exclusive_mode": "Only the highest-priority eligible device runs; the others wait even if the budget would cover them. Boost and guaranteed-run windows still override. Enabled by default."
         }
       },
       "add_device": {

@@ -14,6 +14,7 @@ from .const import (
     CONF_BUY_PRICE_SENSOR,
     CONF_CHEAP_PRICE,
     CONF_DEVICES,
+    CONF_EXCLUSIVE,
     CONF_HOURLY_BALANCE_SENSOR,
     CONF_IMPORT_TOLERANCE,
     CONF_OVERRIDE_MINUTES,
@@ -21,6 +22,7 @@ from .const import (
     CONF_PRICE_SENSOR,
     CONF_SMOOTHING_SECONDS,
     DEFAULT_CHEAP_PRICE,
+    DEFAULT_EXCLUSIVE,
     DEFAULT_IMPORT_TOLERANCE,
     DEFAULT_OVERRIDE_MINUTES,
     DEFAULT_SMOOTHING_SECONDS,
@@ -174,6 +176,7 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
             float(self._conf(CONF_CHEAP_PRICE, DEFAULT_CHEAP_PRICE)),
             float(self._conf(CONF_IMPORT_TOLERANCE, DEFAULT_IMPORT_TOLERANCE)),
             now_local,
+            exclusive=bool(self._conf(CONF_EXCLUSIVE, DEFAULT_EXCLUSIVE)),
         )
 
         if balance_kwh is not None:

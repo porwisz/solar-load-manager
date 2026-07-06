@@ -12,7 +12,8 @@
           "smoothing_seconds": "Okno wygładzania mocy netto [s]",
           "import_tolerance": "Tolerancja importu z sieci [W]",
           "cheap_price": "Próg taniej energii [cena/kWh]",
-          "override_minutes": "Pauza po ręcznej zmianie [min]"
+          "override_minutes": "Pauza po ręcznej zmianie [min]",
+          "exclusive_mode": "Tryb wyłączności (jedno urządzenie naraz)"
         },
         "data_description": {
           "hourly_balance_sensor": "Produkcja minus zużycie narastająco w bieżącej godzinie, w kWh (reset co godzinę). Dodatni = na razie eksport netto. Steruje budżetem mocy i tym, która cena obowiązuje.",
@@ -22,7 +23,8 @@
           "smoothing_seconds": "Okno wygładzania mocy netto wyliczanej z bilansu godzinowego. Większe = spokojniej, ale wolniej. Domyślnie 300 s.",
           "import_tolerance": "Ile watów importu z sieci tolerować zanim urządzenia będą wyłączane. Pochłania też błąd szacowania zużycia. Domyślnie 300 W.",
           "cheap_price": "Działa TYLKO przy eksporcie netto: gdy cena sprzedaży (RCE) jest na progu lub niżej, nadwyżka idzie w urządzenia zamiast na sprzedaż. Nigdy nie wymusza poboru z sieci (chyba że cena jest ujemna). Domyślnie 0.15.",
-          "override_minutes": "Po ręcznej zmianie urządzenia menedżer nie rusza go przez ten czas. Domyślnie 30 min."
+          "override_minutes": "Po ręcznej zmianie urządzenia menedżer nie rusza go przez ten czas. Domyślnie 30 min.",
+          "exclusive_mode": "Działa tylko urządzenie o najwyższym priorytecie; pozostałe czekają, nawet gdy budżet by je pokrył. Boost i okna gwarantowane nadal mają pierwszeństwo. Domyślnie włączony."
         }
       }
     },
@@ -52,7 +54,8 @@
           "smoothing_seconds": "Okno wygładzania mocy netto [s]",
           "import_tolerance": "Tolerancja importu z sieci [W]",
           "cheap_price": "Próg taniej energii [cena/kWh]",
-          "override_minutes": "Pauza po ręcznej zmianie [min]"
+          "override_minutes": "Pauza po ręcznej zmianie [min]",
+          "exclusive_mode": "Tryb wyłączności (jedno urządzenie naraz)"
         },
         "data_description": {
           "hourly_balance_sensor": "Produkcja minus zużycie narastająco w bieżącej godzinie, w kWh (reset co godzinę). Dodatni = na razie eksport netto. Steruje budżetem mocy i tym, która cena obowiązuje.",
@@ -62,7 +65,8 @@
           "smoothing_seconds": "Okno wygładzania mocy netto wyliczanej z bilansu godzinowego. Większe = spokojniej, ale wolniej. Domyślnie 300 s.",
           "import_tolerance": "Ile watów importu z sieci tolerować zanim urządzenia będą wyłączane. Pochłania też błąd szacowania zużycia. Domyślnie 300 W.",
           "cheap_price": "Działa TYLKO przy eksporcie netto: gdy cena sprzedaży (RCE) jest na progu lub niżej, nadwyżka idzie w urządzenia zamiast na sprzedaż. Nigdy nie wymusza poboru z sieci (chyba że cena jest ujemna). Domyślnie 0.15.",
-          "override_minutes": "Po ręcznej zmianie urządzenia menedżer nie rusza go przez ten czas. Domyślnie 30 min."
+          "override_minutes": "Po ręcznej zmianie urządzenia menedżer nie rusza go przez ten czas. Domyślnie 30 min.",
+          "exclusive_mode": "Działa tylko urządzenie o najwyższym priorytecie; pozostałe czekają, nawet gdy budżet by je pokrył. Boost i okna gwarantowane nadal mają pierwszeństwo. Domyślnie włączony."
         }
       },
       "add_device": {

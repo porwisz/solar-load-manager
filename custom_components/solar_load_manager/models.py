@@ -109,6 +109,7 @@ def allocate(
     cheap_price: float,
     import_tolerance: float,
     now: datetime,
+    exclusive: bool = False,
 ) -> dict[str, Decision]:
     """Decide on/off and power allocation for every device.
 
@@ -134,6 +135,7 @@ def allocate(
             budget += inp.own_power_w if cfg.device_type == "tesla" else cfg.rated_power
 
     decisions: dict[str, Decision] = {}
+    slot_taken = False  # exclusive mode: only one device may run at a time
     for cfg, inp in ordered:
         forced_reason = None
         if inp.boost_active:
@@ -158,10 +160,17 @@ def allocate(
             claim = cfg.rated_power if cfg.device_type != "tesla" else cfg.max_amps * cfg.watts_per_amp
             budget -= claim
             decisions[cfg.name] = Decision(True, claim, amps, forced_reason)
+            slot_taken = True
             continue
 
         if effective_price > cfg.max_price:
             decisions[cfg.name] = _guarded_off(cfg, inp, "price_blocked")
+            budget -= decisions[cfg.name].allocated_w
+            slot_taken = slot_taken or decisions[cfg.name].should_be_on
+            continue
+
+        if exclusive and slot_taken:
+            decisions[cfg.name] = _guarded_off(cfg, inp, "waiting_for_priority")
             budget -= decisions[cfg.name].allocated_w
             continue
 
@@ -182,6 +191,7 @@ def allocate(
 
         budget -= decision.allocated_w
         decisions[cfg.name] = decision
+        slot_taken = slot_taken or decision.should_be_on
 
     return decisions
 

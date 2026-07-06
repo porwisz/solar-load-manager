@@ -14,6 +14,7 @@ from .const import (
     CONF_BUY_PRICE_ATTRIBUTE,
     CONF_BUY_PRICE_SENSOR,
     CONF_CHEAP_PRICE,
+    CONF_EXCLUSIVE,
     CONF_HOURLY_BALANCE_SENSOR,
     CONF_MAX_PRICE,
     CONF_SELL_PRICE_SENSOR,
@@ -42,6 +43,7 @@ from .const import (
     CONF_SMOOTHING_SECONDS,
     CONF_VOLTAGE,
     DEFAULT_CHEAP_PRICE,
+    DEFAULT_EXCLUSIVE,
     DEFAULT_MAX_PRICE,
     DEFAULT_IMPORT_TOLERANCE,
     DEFAULT_MAX_AMPS,
@@ -111,6 +113,7 @@ HUB_SCHEMA = vol.Schema(
         vol.Optional(CONF_SMOOTHING_SECONDS, default=DEFAULT_SMOOTHING_SECONDS): vol.Coerce(int),
         vol.Optional(CONF_IMPORT_TOLERANCE, default=DEFAULT_IMPORT_TOLERANCE): vol.Coerce(float),
         vol.Optional(CONF_CHEAP_PRICE, default=DEFAULT_CHEAP_PRICE): vol.Coerce(float),
+        vol.Optional(CONF_EXCLUSIVE, default=DEFAULT_EXCLUSIVE): bool,
         vol.Optional(CONF_OVERRIDE_MINUTES, default=DEFAULT_OVERRIDE_MINUTES): vol.Coerce(float),
     }
 )
