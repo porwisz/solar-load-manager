@@ -127,13 +127,19 @@
           "entity": "Sterowana encja",
           "rated_power": "Moc znamionowa [W]",
           "on_factor": "Współczynnik włączenia",
-          "hvac_mode": "Tryb HVAC (tylko climate)"
+          "hvac_mode": "Tryb HVAC (tylko climate)",
+          "target_temp_off": "Wyłącz po osiągnięciu temperatury",
+          "temp_entity": "Źródło temperatury (opcjonalne)",
+          "target_temp": "Temperatura docelowa (0 = automatycznie)"
         },
         "data_description": {
           "entity": "Encja switch lub climate, którą menedżer włącza i wyłącza.",
           "rated_power": "Typowy pobór mocy podczas pracy. Sprawdź tabliczkę znamionową albo skok zużycia przy starcie. Menedżer rezerwuje tyle nadwyżki.",
           "on_factor": "Margines startu: przy 1.1 urządzenie włączy się dopiero, gdy nadwyżka pokryje 110% mocy. Do utrzymania pracy wystarczy 100% - to daje histerezę.",
-          "hvac_mode": "Tryb ustawiany przy włączeniu encji climate (heat dla jacuzzi/bojlera, cool dla klimatyzacji). Ignorowany dla switchy."
+          "hvac_mode": "Tryb ustawiany przy włączeniu encji climate (heat dla jacuzzi/bojlera, cool dla klimatyzacji). Ignorowany dla switchy.",
+          "target_temp_off": "Zabezpieczenie: gdy aktualna temperatura osiągnie docelową, urządzenie jest wyłączane - z pominięciem minimalnego czasu pracy i ręcznego nadpisania. Zalecane dla jacuzzi i grzałek.",
+          "temp_entity": "Czujnik lub encja climate, z której czytana jest aktualna temperatura. Puste = atrybut current_temperature sterowanej encji.",
+          "target_temp": "Stała wartość docelowa. Zostaw 0, aby użyć nastawy sterowanej encji climate."
         }
       },
       "tesla": {

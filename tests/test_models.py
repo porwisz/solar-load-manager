@@ -232,3 +232,20 @@ def test_exclusive_boost_overrides_slot():
     assert decisions["cwu"].should_be_on
     assert decisions["ac"].should_be_on  # boost bypasses exclusivity
     assert decisions["ac"].reason == "boost"
+
+
+def test_target_reached_forces_off_despite_min_on_and_override():
+    d1 = dev("spa", 1, 2000, target_temp_off=True, min_on_minutes=30)
+    decisions = run(
+        [(d1, inp(is_on=True, minutes_since_command=2, temp_reached=True))],
+        surplus=10000,
+    )
+    assert not decisions["spa"].should_be_on
+    assert decisions["spa"].reason == "target_reached"
+
+
+def test_target_reached_blocks_turn_on_even_when_cheap():
+    d1 = dev("spa", 1, 2000, target_temp_off=True)
+    decisions = run([(d1, inp(temp_reached=True))], surplus=10000, price=0.01, source="sell")
+    assert not decisions["spa"].should_be_on
+    assert decisions["spa"].reason == "target_reached"

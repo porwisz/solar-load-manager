@@ -176,6 +176,8 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
                 cable = self.hass.states.get(cfg.cable_sensor)
                 inp.cable_connected = cable is not None and cable.state == "on"
                 inp.own_power_w = (self._float_state(cfg.charger_power_sensor) or 0.0) * 1000
+            if cfg.target_temp_off:
+                inp.temp_reached = self._temp_reached(cfg)
             pairs.append((cfg, inp))
 
         decisions = allocate(
@@ -226,12 +228,38 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
         self._last_balance_ts = now
         return self._ema
 
+    def _temp_reached(self, cfg: DeviceConfig) -> bool:
+        """True when the device's current temperature is at/above its target."""
+        source = cfg.temp_entity or cfg.entity
+        state = self.hass.states.get(source)
+        if state is None or state.state in ("unknown", "unavailable"):
+            return False
+        current = state.attributes.get("current_temperature")
+        if current is None:
+            try:
+                current = float(state.state)
+            except (TypeError, ValueError):
+                return False
+        target = cfg.target_temp
+        if not target:
+            climate = self.hass.states.get(cfg.entity)
+            if climate is not None:
+                target = climate.attributes.get("temperature")
+        if target is None:
+            return False
+        try:
+            return float(current) >= float(target)
+        except (TypeError, ValueError):
+            return False
+
     # -- actuation ---------------------------------------------------------
 
     async def _apply(
         self, cfg: DeviceConfig, inp: DeviceInput, decision: Decision, now: datetime
     ) -> None:
-        if not inp.enabled or not inp.available or inp.override_active:
+        if not inp.enabled or not inp.available:
+            return
+        if inp.override_active and decision.reason != "target_reached":
             return
         if decision.reason in ("cable_disconnected",):
             return

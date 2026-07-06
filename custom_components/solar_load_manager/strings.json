@@ -127,13 +127,19 @@
           "entity": "Controlled entity",
           "rated_power": "Rated power [W]",
           "on_factor": "Turn-on factor",
-          "hvac_mode": "HVAC mode (climate only)"
+          "hvac_mode": "HVAC mode (climate only)",
+          "target_temp_off": "Turn off at target temperature",
+          "temp_entity": "Temperature source (optional)",
+          "target_temp": "Target temperature (0 = automatic)"
         },
         "data_description": {
           "entity": "The switch or climate entity the manager turns on and off.",
           "rated_power": "Typical power draw while running. Check the nameplate or watch your consumption jump when it starts. The manager reserves this much surplus for it.",
           "on_factor": "Safety margin for starting: with 1.1 the device starts only when the surplus covers 110% of its rated power. Keeping on requires just 100%, which gives hysteresis.",
-          "hvac_mode": "Mode set when a climate device is turned on (heat for jacuzzi/boiler, cool for AC). Ignored for switches."
+          "hvac_mode": "Mode set when a climate device is turned on (heat for jacuzzi/boiler, cool for AC). Ignored for switches.",
+          "target_temp_off": "Safeguard: when the current temperature reaches the target, the device is forced off - bypassing minimum run time and manual override. Recommended for hot tubs and heaters.",
+          "temp_entity": "Sensor or climate entity to read the current temperature from. Leave empty to use the controlled entity's own current_temperature attribute.",
+          "target_temp": "Fixed target. Leave 0 to use the controlled climate entity's own setpoint."
         }
       },
       "tesla": {

@@ -41,6 +41,9 @@ from .const import (
     CONF_PRIORITY,
     CONF_RATED_POWER,
     CONF_SMOOTHING_SECONDS,
+    CONF_TARGET_TEMP,
+    CONF_TARGET_TEMP_OFF,
+    CONF_TEMP_ENTITY,
     CONF_VOLTAGE,
     DEFAULT_CHEAP_PRICE,
     DEFAULT_EXCLUSIVE,
@@ -86,6 +89,9 @@ def device_from_dict(data: dict[str, Any]) -> DeviceConfig:
         min_off_minutes=float(data.get(CONF_MIN_OFF, DEFAULT_MIN_OFF)),
         max_price=float(data.get(CONF_MAX_PRICE, DEFAULT_MAX_PRICE)),
         hvac_mode=data.get(CONF_HVAC_MODE, "heat"),
+        target_temp_off=bool(data.get(CONF_TARGET_TEMP_OFF, False)),
+        temp_entity=data.get(CONF_TEMP_ENTITY, ""),
+        target_temp=float(data[CONF_TARGET_TEMP]) if data.get(CONF_TARGET_TEMP) else None,
         must_run_enabled=bool(data.get(CONF_MUST_RUN_ENABLED, False)),
         must_run_start=_parse_time(data.get(CONF_MUST_RUN_START)),
         must_run_end=_parse_time(data.get(CONF_MUST_RUN_END)),
@@ -228,6 +234,21 @@ class SlmOptionsFlow(OptionsFlow):
                 ): selector.SelectSelector(
                     selector.SelectSelectorConfig(options=["heat", "cool", "auto", "heat_cool"])
                 ),
+                vol.Optional(
+                    CONF_TARGET_TEMP_OFF, default=e.get(CONF_TARGET_TEMP_OFF, False)
+                ): bool,
+                **(
+                    {vol.Optional(CONF_TEMP_ENTITY, default=e[CONF_TEMP_ENTITY]): selector.EntitySelector(
+                        selector.EntitySelectorConfig(domain=["sensor", "climate"])
+                    )}
+                    if e.get(CONF_TEMP_ENTITY)
+                    else {vol.Optional(CONF_TEMP_ENTITY): selector.EntitySelector(
+                        selector.EntitySelectorConfig(domain=["sensor", "climate"])
+                    )}
+                ),
+                vol.Optional(
+                    CONF_TARGET_TEMP, default=e.get(CONF_TARGET_TEMP, 0)
+                ): vol.Coerce(float),
             }
         )
 

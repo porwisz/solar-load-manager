@@ -19,6 +19,9 @@ class DeviceConfig:
     min_off_minutes: float = 10.0
     max_price: float = 999.0  # do not start above this marginal price [PLN/kWh]
     hvac_mode: str = "heat"
+    target_temp_off: bool = False  # safeguard: force off once target temp reached
+    temp_entity: str = ""
+    target_temp: float | None = None
     must_run_enabled: bool = False
     must_run_start: time | None = None
     must_run_end: time | None = None
@@ -60,6 +63,7 @@ class DeviceInput:
     boost_active: bool = False
     cable_connected: bool = True  # tesla only
     own_power_w: float = 0.0  # tesla: current charging power
+    temp_reached: bool = False  # safeguard: target temperature reached
 
 
 @dataclass
@@ -147,6 +151,11 @@ def allocate(
 
         if not inp.enabled or not inp.available:
             decisions[cfg.name] = Decision(inp.is_on, 0.0, None, "disabled")
+            continue
+        if inp.temp_reached:
+            # Safeguard: target temperature reached - force off, bypassing
+            # anti-cycling, boost, must-run and manual override.
+            decisions[cfg.name] = Decision(False, 0.0, None, "target_reached")
             continue
         if cfg.device_type == "tesla" and not inp.cable_connected:
             decisions[cfg.name] = Decision(False, 0.0, None, "cable_disconnected")
