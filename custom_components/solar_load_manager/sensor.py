@@ -145,6 +145,7 @@ class SlmDeviceStatusSensor(CoordinatorEntity[SlmCoordinator], SensorEntity):
                     "device_is_on": inp.is_on,
                     "manual_override": inp.override_active,
                     "boost": inp.boost_active,
+                    "battery_full": inp.battery_full,
                 }
             )
         return attrs

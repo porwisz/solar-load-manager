@@ -176,6 +176,11 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
                 cable = self.hass.states.get(cfg.cable_sensor)
                 inp.cable_connected = cable is not None and cable.state == "on"
                 inp.own_power_w = (self._float_state(cfg.charger_power_sensor) or 0.0) * 1000
+                if cfg.battery_level_sensor and cfg.charge_limit_entity:
+                    level = self._float_state(cfg.battery_level_sensor)
+                    limit = self._float_state(cfg.charge_limit_entity)
+                    if level is not None and limit is not None:
+                        inp.battery_full = level >= limit
             if cfg.target_temp_off:
                 inp.temp_reached = self._temp_reached(cfg)
             pairs.append((cfg, inp))

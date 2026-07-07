@@ -31,6 +31,8 @@ class DeviceConfig:
     current_number: str = ""
     cable_sensor: str = ""
     charger_power_sensor: str = ""
+    battery_level_sensor: str = ""
+    charge_limit_entity: str = ""
     phases: int = 3
     voltage: float = 230.0
     min_amps: int = 5
@@ -65,6 +67,7 @@ class DeviceInput:
     cable_connected: bool = True  # tesla only
     own_power_w: float = 0.0  # tesla: current charging power
     temp_reached: bool = False  # safeguard: target temperature reached
+    battery_full: bool = False  # tesla: battery level at/above charge limit
 
 
 @dataclass
@@ -162,6 +165,11 @@ def allocate(
             continue
         if cfg.device_type == "tesla" and not inp.cable_connected:
             decisions[cfg.name] = Decision(False, 0.0, None, "cable_disconnected")
+            continue
+        if cfg.device_type == "tesla" and inp.battery_full:
+            # Safeguard: battery already at the charge limit - charging is
+            # pointless, force off like target_reached.
+            decisions[cfg.name] = Decision(False, 0.0, None, "battery_full")
             continue
         if inp.override_active:
             decisions[cfg.name] = Decision(inp.is_on, 0.0, None, "manual_override")

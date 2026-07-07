@@ -19,7 +19,9 @@ from .const import (
     CONF_MAX_PRICE,
     CONF_SELL_PRICE_SENSOR,
     CONF_SOLAR_ONLY,
+    CONF_BATTERY_LEVEL_SENSOR,
     CONF_CABLE_SENSOR,
+    CONF_CHARGE_LIMIT_ENTITY,
     CONF_CHARGE_SWITCH,
     CONF_CHARGER_POWER_SENSOR,
     CONF_CURRENT_NUMBER,
@@ -101,6 +103,8 @@ def device_from_dict(data: dict[str, Any]) -> DeviceConfig:
         current_number=data.get(CONF_CURRENT_NUMBER, ""),
         cable_sensor=data.get(CONF_CABLE_SENSOR, ""),
         charger_power_sensor=data.get(CONF_CHARGER_POWER_SENSOR, ""),
+        battery_level_sensor=data.get(CONF_BATTERY_LEVEL_SENSOR, ""),
+        charge_limit_entity=data.get(CONF_CHARGE_LIMIT_ENTITY, ""),
         phases=int(data.get(CONF_PHASES, DEFAULT_PHASES)),
         voltage=float(data.get(CONF_VOLTAGE, DEFAULT_VOLTAGE)),
         min_amps=int(data.get(CONF_MIN_AMPS, DEFAULT_MIN_AMPS)),
@@ -275,6 +279,20 @@ class SlmOptionsFlow(OptionsFlow):
                     selector.EntitySelectorConfig(domain="binary_sensor")
                 ),
                 req(CONF_CHARGER_POWER_SENSOR): _sensor_selector(),
+                **(
+                    {vol.Optional(CONF_BATTERY_LEVEL_SENSOR, default=e[CONF_BATTERY_LEVEL_SENSOR]): _sensor_selector()}
+                    if e.get(CONF_BATTERY_LEVEL_SENSOR)
+                    else {vol.Optional(CONF_BATTERY_LEVEL_SENSOR): _sensor_selector()}
+                ),
+                **(
+                    {vol.Optional(CONF_CHARGE_LIMIT_ENTITY, default=e[CONF_CHARGE_LIMIT_ENTITY]): selector.EntitySelector(
+                        selector.EntitySelectorConfig(domain=["number", "sensor", "input_number"])
+                    )}
+                    if e.get(CONF_CHARGE_LIMIT_ENTITY)
+                    else {vol.Optional(CONF_CHARGE_LIMIT_ENTITY): selector.EntitySelector(
+                        selector.EntitySelectorConfig(domain=["number", "sensor", "input_number"])
+                    )}
+                ),
                 vol.Optional(
                     CONF_PHASES, default=str(e.get(CONF_PHASES, DEFAULT_PHASES))
                 ): selector.SelectSelector(

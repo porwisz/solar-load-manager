@@ -306,3 +306,23 @@ def test_solar_only_boost_and_must_run_still_work():
              must_run_start=time(11), must_run_end=time(13))
     res = run([(d2, inp())], surplus=-500, price=1.0, source="buy")
     assert res["pump"].reason == "must_run"
+
+
+# --- tesla battery limit ---------------------------------------------------
+
+def test_tesla_battery_full_stays_off():
+    res = run([(tesla(), inp(battery_full=True))], surplus=10000)
+    assert res["tesla"].should_be_on is False
+    assert res["tesla"].reason == "battery_full"
+
+
+def test_tesla_battery_full_forces_off_even_when_boosted():
+    res = run([(tesla(), inp(is_on=True, battery_full=True, boost_active=True))], surplus=10000)
+    assert res["tesla"].should_be_on is False
+    assert res["tesla"].reason == "battery_full"
+
+
+def test_tesla_battery_below_limit_charges_on_surplus():
+    res = run([(tesla(), inp(battery_full=False))], surplus=10000)
+    assert res["tesla"].should_be_on is True
+    assert res["tesla"].reason == "running_surplus"
