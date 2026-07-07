@@ -18,6 +18,7 @@ class DeviceConfig:
     min_on_minutes: float = 15.0
     min_off_minutes: float = 10.0
     max_price: float = 999.0  # do not start above this marginal price [PLN/kWh]
+    solar_only: bool = False  # run only on solar surplus; price never starts it
     hvac_mode: str = "heat"
     target_temp_off: bool = False  # safeguard: force off once target temp reached
     temp_entity: str = ""
@@ -148,7 +149,7 @@ def allocate(
             forced_reason = "boost"
         elif cfg.must_run_enabled and in_window(now, cfg.must_run_start, cfg.must_run_end):
             forced_reason = "must_run"
-        elif cheap and effective_price <= cfg.max_price:
+        elif cheap and effective_price <= cfg.max_price and not cfg.solar_only:
             forced_reason = "running_cheap"
 
         if not inp.enabled or not inp.available:
@@ -174,7 +175,7 @@ def allocate(
             slot_taken = True
             continue
 
-        if effective_price > cfg.max_price:
+        if not cfg.solar_only and effective_price > cfg.max_price:
             decisions[cfg.name] = _guarded_off(cfg, inp, "price_blocked")
             budget -= decisions[cfg.name].allocated_w
             slot_taken = slot_taken or decisions[cfg.name].should_be_on

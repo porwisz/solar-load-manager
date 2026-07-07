@@ -273,3 +273,36 @@ def test_target_reached_blocks_turn_on_even_when_cheap():
     decisions = run([(d1, inp(temp_reached=True))], surplus=10000, price=0.01, source="sell")
     assert not decisions["spa"].should_be_on
     assert decisions["spa"].reason == "target_reached"
+
+
+# --- solar only ------------------------------------------------------------
+
+def test_solar_only_not_started_by_cheap_price():
+    d = dev("pump", 1, solar_only=True)
+    res = run([(d, inp())], surplus=-500, price=0.05, source="sell")
+    assert res["pump"].should_be_on is False
+    assert res["pump"].reason == "insufficient_surplus"
+
+
+def test_solar_only_not_started_by_negative_price():
+    d = dev("pump", 1, solar_only=True)
+    res = run([(d, inp())], surplus=-500, price=-0.10, source="buy")
+    assert res["pump"].should_be_on is False
+
+
+def test_solar_only_runs_on_surplus_regardless_of_price():
+    d = dev("pump", 1, solar_only=True)
+    res = run([(d, inp())], surplus=2000, price=2.0, source="sell")
+    assert res["pump"].should_be_on is True
+    assert res["pump"].reason == "running_surplus"
+
+
+def test_solar_only_boost_and_must_run_still_work():
+    d = dev("pump", 1, solar_only=True)
+    res = run([(d, inp(boost_active=True))], surplus=-500, price=1.0, source="buy")
+    assert res["pump"].reason == "boost"
+
+    d2 = dev("pump", 1, solar_only=True, must_run_enabled=True,
+             must_run_start=time(11), must_run_end=time(13))
+    res = run([(d2, inp())], surplus=-500, price=1.0, source="buy")
+    assert res["pump"].reason == "must_run"

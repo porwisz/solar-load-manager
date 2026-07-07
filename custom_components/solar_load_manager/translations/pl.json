@@ -81,7 +81,8 @@
           "must_run_enabled": "Okno gwarantowanej pracy",
           "must_run_start": "Początek okna",
           "must_run_end": "Koniec okna",
-          "max_price": "Maksymalna cena krańcowa [cena/kWh]"
+          "max_price": "Maksymalna cena krańcowa [cena/kWh]",
+          "solar_only": "Tylko solar"
         },
         "data_description": {
           "name": "Widoczna w nazwach encji i używana w usłudze boost. Późniejsza zmiana nazwy tworzy nowe encje.",
@@ -92,7 +93,8 @@
           "must_run_enabled": "Wymuś codzienną pracę w poniższym oknie, niezależnie od słońca i ceny - gwarancja komfortu.",
           "must_run_start": "Początek okna (czas lokalny). Okno przechodzące przez północ jest obsługiwane.",
           "must_run_end": "Koniec okna (czas lokalny).",
-          "max_price": "Urządzenie nie włączy się, gdy aktualna cena krańcowa (RCE przy eksporcie netto, taryfa przy imporcie) przekracza tę wartość. 999 = bez limitu. Przykład: 0.3 pozwala jacuzzi grzać z nadwyżki lub poza szczytem, nigdy w szczycie taryfy."
+          "max_price": "Urządzenie nie włączy się, gdy aktualna cena krańcowa (RCE przy eksporcie netto, taryfa przy imporcie) przekracza tę wartość. 999 = bez limitu. Przykład: 0.3 pozwala jacuzzi grzać z nadwyżki lub poza szczytem, nigdy w szczycie taryfy.",
+          "solar_only": "Działa wyłącznie na nadwyżce z PV. Tania lub ujemna cena nigdy nie włączy tego urządzenia — brak nadwyżki, brak pracy. Boost i okna wymuszonej pracy nadal działają."
         }
       },
       "edit_device": {
@@ -107,7 +109,8 @@
           "must_run_enabled": "Okno gwarantowanej pracy",
           "must_run_start": "Początek okna",
           "must_run_end": "Koniec okna",
-          "max_price": "Maksymalna cena krańcowa [cena/kWh]"
+          "max_price": "Maksymalna cena krańcowa [cena/kWh]",
+          "solar_only": "Tylko solar"
         },
         "data_description": {
           "priority": "1 = obsługiwany pierwszy. Gdy nadwyżka maleje, najwyższy numer jest wyłączany pierwszy.",
@@ -117,7 +120,8 @@
           "must_run_enabled": "Wymuś codzienną pracę w poniższym oknie, niezależnie od słońca i ceny - gwarancja komfortu.",
           "must_run_start": "Początek okna (czas lokalny). Okno przechodzące przez północ jest obsługiwane.",
           "must_run_end": "Koniec okna (czas lokalny).",
-          "max_price": "Urządzenie nie włączy się, gdy aktualna cena krańcowa (RCE przy eksporcie netto, taryfa przy imporcie) przekracza tę wartość. 999 = bez limitu. Przykład: 0.3 pozwala jacuzzi grzać z nadwyżki lub poza szczytem, nigdy w szczycie taryfy."
+          "max_price": "Urządzenie nie włączy się, gdy aktualna cena krańcowa (RCE przy eksporcie netto, taryfa przy imporcie) przekracza tę wartość. 999 = bez limitu. Przykład: 0.3 pozwala jacuzzi grzać z nadwyżki lub poza szczytem, nigdy w szczycie taryfy.",
+          "solar_only": "Działa wyłącznie na nadwyżce z PV. Tania lub ujemna cena nigdy nie włączy tego urządzenia — brak nadwyżki, brak pracy. Boost i okna wymuszonej pracy nadal działają."
         }
       },
       "onoff": {

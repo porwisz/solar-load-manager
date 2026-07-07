@@ -18,6 +18,7 @@ from .const import (
     CONF_HOURLY_BALANCE_SENSOR,
     CONF_MAX_PRICE,
     CONF_SELL_PRICE_SENSOR,
+    CONF_SOLAR_ONLY,
     CONF_CABLE_SENSOR,
     CONF_CHARGE_SWITCH,
     CONF_CHARGER_POWER_SENSOR,
@@ -88,6 +89,7 @@ def device_from_dict(data: dict[str, Any]) -> DeviceConfig:
         min_on_minutes=float(data.get(CONF_MIN_ON, DEFAULT_MIN_ON)),
         min_off_minutes=float(data.get(CONF_MIN_OFF, DEFAULT_MIN_OFF)),
         max_price=float(data.get(CONF_MAX_PRICE, DEFAULT_MAX_PRICE)),
+        solar_only=bool(data.get(CONF_SOLAR_ONLY, False)),
         hvac_mode=data.get(CONF_HVAC_MODE, "heat"),
         target_temp_off=bool(data.get(CONF_TARGET_TEMP_OFF, False)),
         temp_entity=data.get(CONF_TEMP_ENTITY, ""),
@@ -196,6 +198,9 @@ class SlmOptionsFlow(OptionsFlow):
                 vol.Optional(
                     CONF_MAX_PRICE, default=e.get(CONF_MAX_PRICE, DEFAULT_MAX_PRICE)
                 ): vol.Coerce(float),
+                vol.Optional(
+                    CONF_SOLAR_ONLY, default=e.get(CONF_SOLAR_ONLY, False)
+                ): bool,
                 vol.Optional(
                     CONF_MUST_RUN_ENABLED, default=e.get(CONF_MUST_RUN_ENABLED, False)
                 ): bool,

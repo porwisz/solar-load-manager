@@ -81,7 +81,8 @@
           "must_run_enabled": "Guaranteed run window",
           "must_run_start": "Window start",
           "must_run_end": "Window end",
-          "max_price": "Maximum marginal price [price/kWh]"
+          "max_price": "Maximum marginal price [price/kWh]",
+          "solar_only": "Solar only"
         },
         "data_description": {
           "name": "Shown in entity names and used in the boost service. Renaming later creates new entities.",
@@ -92,7 +93,8 @@
           "must_run_enabled": "Force the device on daily within the window below, regardless of sun and price - a comfort guarantee.",
           "must_run_start": "Window start (local time). A window crossing midnight is supported.",
           "must_run_end": "Window end (local time).",
-          "max_price": "The device will not start when the current marginal price (RCE while net-exporting, tariff while importing) exceeds this. 999 = no limit. Example: 0.3 lets the hot tub run on surplus or off-peak, never at peak tariff."
+          "max_price": "The device will not start when the current marginal price (RCE while net-exporting, tariff while importing) exceeds this. 999 = no limit. Example: 0.3 lets the hot tub run on surplus or off-peak, never at peak tariff.",
+          "solar_only": "Run only on solar surplus. Cheap or negative prices never start this device — no surplus, no run. Boost and must-run windows still apply."
         }
       },
       "edit_device": {
@@ -107,7 +109,8 @@
           "must_run_enabled": "Guaranteed run window",
           "must_run_start": "Window start",
           "must_run_end": "Window end",
-          "max_price": "Maximum marginal price [price/kWh]"
+          "max_price": "Maximum marginal price [price/kWh]",
+          "solar_only": "Solar only"
         },
         "data_description": {
           "priority": "1 = served first. When surplus shrinks, the highest number is shed first.",
@@ -117,7 +120,8 @@
           "must_run_enabled": "Force the device on daily within the window below, regardless of sun and price - a comfort guarantee.",
           "must_run_start": "Window start (local time). A window crossing midnight is supported.",
           "must_run_end": "Window end (local time).",
-          "max_price": "The device will not start when the current marginal price (RCE while net-exporting, tariff while importing) exceeds this. 999 = no limit. Example: 0.3 lets the hot tub run on surplus or off-peak, never at peak tariff."
+          "max_price": "The device will not start when the current marginal price (RCE while net-exporting, tariff while importing) exceeds this. 999 = no limit. Example: 0.3 lets the hot tub run on surplus or off-peak, never at peak tariff.",
+          "solar_only": "Run only on solar surplus. Cheap or negative prices never start this device — no surplus, no run. Boost and must-run windows still apply."
         }
       },
       "onoff": {
