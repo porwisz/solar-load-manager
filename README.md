@@ -36,7 +36,8 @@ backs off for a configurable period (default 30 minutes).
 - Per device: an **enable switch** (arm/disarm, restored across restarts) and a
   **status sensor** (`running_surplus`, `running_cheap`, `must_run`, `boost`,
   `insufficient_surplus`, `anti_cycle_wait`, `manual_override`, …) with
-  attributes: allocated watts, target amps, priority.
+  attributes: allocated watts, target amps, priority, the budget needed to run
+  (`required_w`) and how much surplus is missing right now (`missing_w`).
 
 ### Services
 

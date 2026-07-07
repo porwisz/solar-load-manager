@@ -135,6 +135,9 @@ class SlmDeviceStatusSensor(CoordinatorEntity[SlmCoordinator], SensorEntity):
                     "target_amps": decision.target_amps,
                 }
             )
+            if decision.required_w is not None:
+                attrs["required_w"] = round(decision.required_w)
+                attrs["missing_w"] = round(decision.missing_w or 0)
         if inp is not None:
             attrs.update(
                 {

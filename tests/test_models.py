@@ -71,6 +71,30 @@ def test_priority_ladder():
     assert decisions["ac"].reason == "insufficient_surplus"
 
 
+def test_insufficient_surplus_reports_missing_watts():
+    d1, d2 = dev("cwu", 1, 1500), dev("ac", 2, 1000)
+    decisions = run([(d1, inp()), (d2, inp())], surplus=1800, tolerance=0)
+    # cwu runs: threshold met, nothing missing
+    assert round(decisions["cwu"].required_w) == 1650
+    assert decisions["cwu"].missing_w == 0
+    # ac needs 1100 (1000 * 1.1) but only 300 is left after cwu
+    assert round(decisions["ac"].required_w) == 1100
+    assert round(decisions["ac"].missing_w) == 800
+
+
+def test_tesla_reports_missing_watts_for_min_amps():
+    tesla = DeviceConfig(
+        name="tesla", priority=1, device_type="tesla",
+        charge_switch="switch.t", current_number="number.t",
+        min_amps=5, max_amps=16, phases=3, voltage=230,
+    )
+    decisions = run([(tesla, inp(cable_connected=True))], surplus=2000, tolerance=0)
+    # needs 5 A * 690 W/A = 3450 W, has 2000
+    assert decisions["tesla"].reason == "insufficient_surplus"
+    assert decisions["tesla"].required_w == 3450
+    assert decisions["tesla"].missing_w == 1450
+
+
 def test_both_fit():
     d1, d2 = dev("cwu", 1, 1500), dev("ac", 2, 1000)
     decisions = run([(d1, inp()), (d2, inp())], surplus=3000, tolerance=0)

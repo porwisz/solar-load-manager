@@ -74,6 +74,8 @@ class Decision:
     allocated_w: float
     target_amps: int | None
     reason: str
+    required_w: float | None = None  # budget needed for the device to (keep) running
+    missing_w: float | None = None  # how much more surplus that requires right now
 
 
 def marginal_price(
@@ -186,6 +188,7 @@ def allocate(
         if cfg.device_type == "tesla":
             amps = int(budget // cfg.watts_per_amp)
             amps = min(amps, cfg.max_amps)
+            threshold = cfg.min_amps * cfg.watts_per_amp
             if amps >= cfg.min_amps:
                 claim = amps * cfg.watts_per_amp
                 decision = _guarded_on(cfg, inp, claim, amps, "running_surplus")
@@ -197,6 +200,8 @@ def allocate(
                 decision = _guarded_on(cfg, inp, cfg.rated_power, None, "running_surplus")
             else:
                 decision = _guarded_off(cfg, inp, "insufficient_surplus")
+        decision.required_w = threshold
+        decision.missing_w = max(0.0, threshold - budget)
 
         budget -= decision.allocated_w
         decisions[cfg.name] = decision
