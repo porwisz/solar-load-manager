@@ -33,6 +33,7 @@ class DeviceConfig:
     charger_power_sensor: str = ""
     battery_level_sensor: str = ""
     charge_limit_entity: str = ""
+    refresh_button: str = ""  # pressed after commands to force fresh data
     phases: int = 3
     voltage: float = 230.0
     min_amps: int = 5

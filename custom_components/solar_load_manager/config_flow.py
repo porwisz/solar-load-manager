@@ -43,6 +43,7 @@ from .const import (
     CONF_PHASES,
     CONF_PRIORITY,
     CONF_RATED_POWER,
+    CONF_REFRESH_BUTTON,
     CONF_SMOOTHING_SECONDS,
     CONF_TARGET_TEMP,
     CONF_TARGET_TEMP_OFF,
@@ -105,6 +106,7 @@ def device_from_dict(data: dict[str, Any]) -> DeviceConfig:
         charger_power_sensor=data.get(CONF_CHARGER_POWER_SENSOR, ""),
         battery_level_sensor=data.get(CONF_BATTERY_LEVEL_SENSOR, ""),
         charge_limit_entity=data.get(CONF_CHARGE_LIMIT_ENTITY, ""),
+        refresh_button=data.get(CONF_REFRESH_BUTTON, ""),
         phases=int(data.get(CONF_PHASES, DEFAULT_PHASES)),
         voltage=float(data.get(CONF_VOLTAGE, DEFAULT_VOLTAGE)),
         min_amps=int(data.get(CONF_MIN_AMPS, DEFAULT_MIN_AMPS)),
@@ -283,6 +285,15 @@ class SlmOptionsFlow(OptionsFlow):
                     {vol.Optional(CONF_BATTERY_LEVEL_SENSOR, default=e[CONF_BATTERY_LEVEL_SENSOR]): _sensor_selector()}
                     if e.get(CONF_BATTERY_LEVEL_SENSOR)
                     else {vol.Optional(CONF_BATTERY_LEVEL_SENSOR): _sensor_selector()}
+                ),
+                **(
+                    {vol.Optional(CONF_REFRESH_BUTTON, default=e[CONF_REFRESH_BUTTON]): selector.EntitySelector(
+                        selector.EntitySelectorConfig(domain="button")
+                    )}
+                    if e.get(CONF_REFRESH_BUTTON)
+                    else {vol.Optional(CONF_REFRESH_BUTTON): selector.EntitySelector(
+                        selector.EntitySelectorConfig(domain="button")
+                    )}
                 ),
                 **(
                     {vol.Optional(CONF_CHARGE_LIMIT_ENTITY, default=e[CONF_CHARGE_LIMIT_ENTITY]): selector.EntitySelector(

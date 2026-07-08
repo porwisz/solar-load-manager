@@ -296,11 +296,21 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
                     "switch", "turn_on", {"entity_id": cfg.charge_switch}, blocking=True
                 )
                 self._last_command[cfg.name] = (True, now)
+                await self._press_refresh(cfg)
         elif not decision.should_be_on and inp.is_on:
             await self.hass.services.async_call(
                 "switch", "turn_off", {"entity_id": cfg.charge_switch}, blocking=True
             )
             self._last_command[cfg.name] = (False, now)
+            await self._press_refresh(cfg)
+
+    async def _press_refresh(self, cfg: DeviceConfig) -> None:
+        """Force a data refresh so sensors reflect the new charging state."""
+        if not cfg.refresh_button:
+            return
+        await self.hass.services.async_call(
+            "button", "press", {"entity_id": cfg.refresh_button}, blocking=False
+        )
 
     async def _turn_on(self, cfg: DeviceConfig) -> None:
         if cfg.device_type == DEVICE_TYPE_CLIMATE:
