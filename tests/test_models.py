@@ -326,3 +326,12 @@ def test_tesla_battery_below_limit_charges_on_surplus():
     res = run([(tesla(), inp(battery_full=False))], surplus=10000)
     assert res["tesla"].should_be_on is True
     assert res["tesla"].reason == "running_surplus"
+
+
+def test_tesla_anti_cycle_hold_drops_to_min_amps():
+    t = tesla()
+    res = run([(t, inp(is_on=True, minutes_since_command=5, own_power_w=6900))], surplus=-5000)
+    assert res["tesla"].should_be_on is True
+    assert res["tesla"].reason == "anti_cycle_hold"
+    assert res["tesla"].target_amps == 5
+    assert res["tesla"].allocated_w == 5 * 690

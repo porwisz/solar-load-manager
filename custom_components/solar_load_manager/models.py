@@ -232,6 +232,11 @@ def _guarded_on(
 def _guarded_off(cfg: DeviceConfig, inp: DeviceInput, reason: str) -> Decision:
     """Turn off, unless the device turned on too recently (anti-cycling)."""
     if inp.is_on and inp.minutes_since_command < cfg.min_on_minutes:
-        claim = inp.own_power_w if cfg.device_type == "tesla" else cfg.rated_power
-        return Decision(True, claim, None, "anti_cycle_hold")
+        if cfg.device_type == "tesla":
+            # Ride out the hold at the lowest configured current to
+            # minimise grid import while the surplus is gone.
+            return Decision(
+                True, cfg.min_amps * cfg.watts_per_amp, cfg.min_amps, "anti_cycle_hold"
+            )
+        return Decision(True, cfg.rated_power, None, "anti_cycle_hold")
     return Decision(False, 0.0, None, reason)
