@@ -15,6 +15,7 @@ from .const import (
     CONF_CHEAP_PRICE,
     CONF_DEVICES,
     CONF_EXCLUSIVE,
+    CONF_EXPORT_MARGIN,
     CONF_HOURLY_BALANCE_SENSOR,
     CONF_IMPORT_TOLERANCE,
     CONF_OVERRIDE_MINUTES,
@@ -23,6 +24,7 @@ from .const import (
     CONF_SMOOTHING_SECONDS,
     DEFAULT_CHEAP_PRICE,
     DEFAULT_EXCLUSIVE,
+    DEFAULT_EXPORT_MARGIN,
     DEFAULT_IMPORT_TOLERANCE,
     DEFAULT_OVERRIDE_MINUTES,
     DEFAULT_SMOOTHING_SECONDS,
@@ -124,7 +126,12 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
             self._conf(CONF_SELL_PRICE_SENSOR, self._conf(CONF_PRICE_SENSOR, None))
         )
         buy_price = self._buy_price()
-        price, price_source = marginal_price(balance_kwh, sell_price, buy_price)
+        price, price_source = marginal_price(
+            balance_kwh,
+            sell_price,
+            buy_price,
+            float(self._conf(CONF_EXPORT_MARGIN, DEFAULT_EXPORT_MARGIN)),
+        )
 
         override_minutes = float(self._conf(CONF_OVERRIDE_MINUTES, DEFAULT_OVERRIDE_MINUTES))
         pairs: list[tuple[DeviceConfig, DeviceInput]] = []

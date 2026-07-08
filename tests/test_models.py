@@ -335,3 +335,10 @@ def test_tesla_anti_cycle_hold_drops_to_min_amps():
     assert res["tesla"].reason == "anti_cycle_hold"
     assert res["tesla"].target_amps == 5
     assert res["tesla"].allocated_w == 5 * 690
+
+
+def test_marginal_price_export_margin():
+    # balance barely positive but under the margin -> still tariff
+    assert marginal_price(0.05, 0.13, 0.90, export_margin_kwh=0.2) == (0.90, "buy")
+    # balance clears the margin -> sell price
+    assert marginal_price(0.25, 0.13, 0.90, export_margin_kwh=0.2) == (0.13, "sell")

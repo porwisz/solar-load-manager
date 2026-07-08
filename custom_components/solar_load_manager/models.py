@@ -87,14 +87,19 @@ def marginal_price(
     hourly_balance_kwh: float | None,
     sell_price: float | None,
     buy_price: float | None,
+    export_margin_kwh: float = 0.0,
 ) -> tuple[float | None, str]:
     """Cost of one extra kWh under hourly net-billing.
 
     While the hour's balance is positive the house is a net exporter, so
     extra consumption only forgoes the sell (RCE) price; once net-importing,
     it costs the tariff (buy) price. Returns (price, source).
+
+    export_margin_kwh guards against a balance that oscillates around zero
+    (readings arrive in chunks): the hour only counts as exporting once the
+    balance clears the margin.
     """
-    if hourly_balance_kwh is not None and hourly_balance_kwh > 0:
+    if hourly_balance_kwh is not None and hourly_balance_kwh > export_margin_kwh:
         if sell_price is not None:
             return sell_price, "sell"
     if buy_price is not None:
