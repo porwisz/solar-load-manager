@@ -189,7 +189,12 @@ def allocate(
             slot_taken = True
             continue
 
-        if not cfg.solar_only and effective_price > cfg.max_price:
+        # max_price is a hard ceiling for every device, including solar_only
+        # ones: even free surplus should not be diverted to a load when the
+        # forgone export (or grid tariff) exceeds the configured limit.
+        # solar_only still opts out of the cheap-forcing branch above, so it
+        # never *forces* consumption from the grid.
+        if effective_price > cfg.max_price:
             decisions[cfg.name] = _guarded_off(cfg, inp, "price_blocked")
             budget -= decisions[cfg.name].allocated_w
             slot_taken = slot_taken or decisions[cfg.name].should_be_on

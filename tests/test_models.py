@@ -290,11 +290,21 @@ def test_solar_only_not_started_by_negative_price():
     assert res["pump"].should_be_on is False
 
 
-def test_solar_only_runs_on_surplus_regardless_of_price():
+def test_solar_only_runs_on_surplus_up_to_max_price():
+    # With no max_price configured (default 999) surplus runs at any price.
     d = dev("pump", 1, solar_only=True)
     res = run([(d, inp())], surplus=2000, price=2.0, source="sell")
     assert res["pump"].should_be_on is True
     assert res["pump"].reason == "running_surplus"
+
+
+def test_solar_only_blocked_by_max_price_on_surplus():
+    # max_price is a hard ceiling even for solar_only: don't divert surplus
+    # when the forgone export price exceeds the limit.
+    d = dev("pump", 1, solar_only=True, max_price=0.7)
+    res = run([(d, inp())], surplus=2000, price=0.77, source="sell")
+    assert res["pump"].should_be_on is False
+    assert res["pump"].reason == "price_blocked"
 
 
 def test_solar_only_boost_and_must_run_still_work():
