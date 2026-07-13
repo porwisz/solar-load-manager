@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import replace
 from datetime import datetime, timedelta
 
 from homeassistant.core import HomeAssistant
@@ -63,6 +64,8 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
         self._last_balance_ts: datetime | None = None
         # runtime state, keyed by device name
         self.enabled: dict[str, bool] = {d.name: False for d in self.devices}
+        # runtime override of the configured solar_only flag (switch entity)
+        self.solar_only: dict[str, bool] = {d.name: d.solar_only for d in self.devices}
         self._last_command: dict[str, tuple[bool, datetime]] = {}
         self._override_until: dict[str, datetime] = {}
         self._boost_until: dict[str, datetime] = {}
@@ -103,6 +106,9 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
     def set_enabled(self, name: str, value: bool) -> None:
         self.enabled[name] = value
 
+    def set_solar_only(self, name: str, value: bool) -> None:
+        self.solar_only[name] = value
+
     def start_boost(self, name: str, minutes: float) -> None:
         self._boost_until[name] = dt_util.utcnow() + timedelta(minutes=minutes)
 
@@ -136,6 +142,9 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
         override_minutes = float(self._conf(CONF_OVERRIDE_MINUTES, DEFAULT_OVERRIDE_MINUTES))
         pairs: list[tuple[DeviceConfig, DeviceInput]] = []
         for cfg in self.devices:
+            solar_only = self.solar_only.get(cfg.name, cfg.solar_only)
+            if solar_only != cfg.solar_only:
+                cfg = replace(cfg, solar_only=solar_only)
             is_on = self._device_is_on(cfg)
             inp = DeviceInput(
                 enabled=self.enabled.get(cfg.name, False),

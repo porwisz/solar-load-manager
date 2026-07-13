@@ -18,9 +18,11 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     coordinator: SlmCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(
-        SlmEnableSwitch(coordinator, entry, cfg) for cfg in coordinator.devices
-    )
+    entities: list[SwitchEntity] = []
+    for cfg in coordinator.devices:
+        entities.append(SlmEnableSwitch(coordinator, entry, cfg))
+        entities.append(SlmSolarOnlySwitch(coordinator, entry, cfg))
+    async_add_entities(entities)
 
 
 class SlmEnableSwitch(CoordinatorEntity[SlmCoordinator], SwitchEntity, RestoreEntity):
@@ -58,5 +60,48 @@ class SlmEnableSwitch(CoordinatorEntity[SlmCoordinator], SwitchEntity, RestoreEn
 
     async def async_turn_off(self, **kwargs) -> None:
         self.coordinator.set_enabled(self._cfg.name, False)
+        self.async_write_ha_state()
+        await self.coordinator.async_request_refresh()
+
+
+class SlmSolarOnlySwitch(CoordinatorEntity[SlmCoordinator], SwitchEntity, RestoreEntity):
+    """Runtime toggle for the device's solar_only mode.
+
+    Overrides the configured value; the configured value is the default
+    until the switch is first toggled (then the last state is restored).
+    """
+
+    _attr_icon = "mdi:weather-sunny"
+
+    def __init__(
+        self, coordinator: SlmCoordinator, entry: ConfigEntry, cfg: DeviceConfig
+    ) -> None:
+        super().__init__(coordinator)
+        self._cfg = cfg
+        self._attr_unique_id = f"{entry.entry_id}_{cfg.slug}_solar_only"
+        self._attr_name = f"{cfg.name} solar only"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"{entry.entry_id}_{cfg.slug}")},
+            name=f"SLM {cfg.name}",
+            manufacturer="Solar Load Manager",
+        )
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        last = await self.async_get_last_state()
+        if last is not None and last.state in ("on", "off"):
+            self.coordinator.set_solar_only(self._cfg.name, last.state == "on")
+
+    @property
+    def is_on(self) -> bool:
+        return self.coordinator.solar_only.get(self._cfg.name, self._cfg.solar_only)
+
+    async def async_turn_on(self, **kwargs) -> None:
+        self.coordinator.set_solar_only(self._cfg.name, True)
+        self.async_write_ha_state()
+        await self.coordinator.async_request_refresh()
+
+    async def async_turn_off(self, **kwargs) -> None:
+        self.coordinator.set_solar_only(self._cfg.name, False)
         self.async_write_ha_state()
         await self.coordinator.async_request_refresh()

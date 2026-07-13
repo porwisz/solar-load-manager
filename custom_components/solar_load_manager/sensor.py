@@ -126,7 +126,9 @@ class SlmDeviceStatusSensor(CoordinatorEntity[SlmCoordinator], SensorEntity):
             "priority": self._cfg.priority,
             "device_type": self._cfg.device_type,
             "rated_power": self._cfg.rated_power,
-            "solar_only": self._cfg.solar_only,
+            "solar_only": self.coordinator.solar_only.get(
+                self._cfg.name, self._cfg.solar_only
+            ),
         }
         if decision is not None:
             attrs.update(
