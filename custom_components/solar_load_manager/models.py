@@ -23,6 +23,11 @@ class DeviceConfig:
     target_temp_off: bool = False  # safeguard: force off once target temp reached
     temp_entity: str = ""
     target_temp: float | None = None
+    # setpoint (DHW boost): "on" raises the climate setpoint to boost_temp,
+    # "off" restores the pre-boost setpoint (restore_temp is the fallback
+    # when the pre-boost value is unknown, e.g. after a restart)
+    boost_temp: float = 55.0
+    restore_temp: float = 45.0
     must_run_enabled: bool = False
     must_run_start: time | None = None
     must_run_end: time | None = None

@@ -91,7 +91,7 @@
         "data_description": {
           "name": "Widoczna w nazwach encji i używana w usłudze boost. Późniejsza zmiana nazwy tworzy nowe encje.",
           "priority": "1 = obsługiwany pierwszy. Gdy nadwyżka maleje, najwyższy numer jest wyłączany pierwszy.",
-          "device_type": "switch: cokolwiek z wł./wył. climate: termostat sterowany trybem HVAC. tesla: ładowanie EV z modulacją amperażu.",
+          "device_type": "switch: cokolwiek z wł./wył. climate: termostat sterowany trybem HVAC. tesla: ładowanie EV z modulacją amperażu. setpoint: podnosi nastawę encji climate (np. CWU do 55°C) na czas nadwyżki, potem ją przywraca.",
           "min_on_minutes": "Po włączeniu urządzenie pracuje co najmniej tyle - chroni sprężarki i grzałki przed cyklowaniem.",
           "min_off_minutes": "Po wyłączeniu urządzenie odpoczywa co najmniej tyle zanim menedżer może je ponownie włączyć.",
           "must_run_enabled": "Wymuś codzienną pracę w poniższym oknie, niezależnie od słońca i ceny - gwarancja komfortu.",
@@ -118,7 +118,7 @@
         },
         "data_description": {
           "priority": "1 = obsługiwany pierwszy. Gdy nadwyżka maleje, najwyższy numer jest wyłączany pierwszy.",
-          "device_type": "switch: cokolwiek z wł./wył. climate: termostat sterowany trybem HVAC. tesla: ładowanie EV z modulacją amperażu.",
+          "device_type": "switch: cokolwiek z wł./wył. climate: termostat sterowany trybem HVAC. tesla: ładowanie EV z modulacją amperażu. setpoint: podnosi nastawę encji climate (np. CWU do 55°C) na czas nadwyżki, potem ją przywraca.",
           "min_on_minutes": "Po włączeniu urządzenie pracuje co najmniej tyle - chroni sprężarki i grzałki przed cyklowaniem.",
           "min_off_minutes": "Po wyłączeniu urządzenie odpoczywa co najmniej tyle zanim menedżer może je ponownie włączyć.",
           "must_run_enabled": "Wymuś codzienną pracę w poniższym oknie, niezależnie od słońca i ceny - gwarancja komfortu.",
@@ -148,6 +148,28 @@
           "target_temp_off": "Zabezpieczenie: gdy aktualna temperatura osiągnie docelową, urządzenie jest wyłączane - z pominięciem minimalnego czasu pracy i ręcznego nadpisania. Zalecane dla jacuzzi i grzałek.",
           "temp_entity": "Czujnik lub encja climate, z której czytana jest aktualna temperatura. Puste = atrybut current_temperature sterowanej encji.",
           "target_temp": "Stała wartość docelowa. Zostaw 0, aby użyć nastawy sterowanej encji climate."
+        }
+      },
+      "setpoint": {
+        "title": "Podbicie nastawy (CWU)",
+        "description": "Krok 2 z 2: którą encję climate podbijać i ile mocy pobiera grzanie. Na czas nadwyżki nastawa jest podnoszona do temperatury podbicia; potem przywracana jest nastawa sprzed podbicia, więc istniejące automatyzacje czasowe nastaw dalej działają.",
+        "data": {
+          "entity": "Encja climate (nastawa CWU)",
+          "rated_power": "Moc znamionowa [W]",
+          "on_factor": "Współczynnik włączenia",
+          "boost_temp": "Temperatura podbicia",
+          "restore_temp": "Awaryjna temperatura powrotu",
+          "target_temp_off": "Zwolnij po osiągnięciu temperatury podbicia",
+          "temp_entity": "Źródło temperatury wody (opcjonalne)"
+        },
+        "data_description": {
+          "entity": "Encja climate, której temperatura zadana jest podnoszona, np. nastawa CWU pompy ciepła.",
+          "rated_power": "Moc pobierana podczas grzania. Menedżer rezerwuje tyle nadwyżki na podbicie.",
+          "on_factor": "Margines startu: przy 1.1 podbicie zacznie się dopiero, gdy nadwyżka pokryje 110% mocy znamionowej.",
+          "boost_temp": "Nastawa stosowana podczas podbicia, np. 55.",
+          "restore_temp": "Używana tylko, gdy nastawa sprzed podbicia jest nieznana (np. po restarcie Home Assistanta). Normalnie przywracana jest nastawa zapamiętana tuż przed podbiciem.",
+          "target_temp_off": "Zabezpieczenie: gdy woda osiągnie temperaturę podbicia, podbicie jest natychmiast zwalniane - zarezerwowana nadwyżka wraca do innych urządzeń.",
+          "temp_entity": "Czujnik lub encja climate, z której czytana jest temperatura wody. Puste = atrybut current_temperature sterowanej encji."
         }
       },
       "tesla": {

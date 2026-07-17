@@ -30,6 +30,7 @@ from .const import (
     DEFAULT_OVERRIDE_MINUTES,
     DEFAULT_SMOOTHING_SECONDS,
     DEVICE_TYPE_CLIMATE,
+    DEVICE_TYPE_SETPOINT,
     DEVICE_TYPE_TESLA,
     DOMAIN,
     UPDATE_INTERVAL_SECONDS,
@@ -69,6 +70,9 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
         self._last_command: dict[str, tuple[bool, datetime]] = {}
         self._override_until: dict[str, datetime] = {}
         self._boost_until: dict[str, datetime] = {}
+        # setpoint devices: the setpoint seen right before boosting, so the
+        # schedule's value can be restored when the boost ends
+        self._restore_temp: dict[str, float] = {}
 
     # -- helpers -----------------------------------------------------------
 
@@ -101,6 +105,13 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
         state = self.hass.states.get(entity)
         if state is None or state.state in ("unknown", "unavailable"):
             return None
+        if cfg.device_type == DEVICE_TYPE_SETPOINT:
+            # "on" means the boost setpoint is currently applied.
+            try:
+                setpoint = float(state.attributes.get("temperature"))
+            except (TypeError, ValueError):
+                return None
+            return setpoint >= cfg.boost_temp - 0.1
         return state.state not in ("off",)
 
     def set_enabled(self, name: str, value: bool) -> None:
@@ -262,6 +273,10 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
             except (TypeError, ValueError):
                 return False
         target = cfg.target_temp
+        if not target and cfg.device_type == DEVICE_TYPE_SETPOINT:
+            # For setpoint devices the guard asks "is boosting still useful?",
+            # so compare against the boost target, not the current setpoint.
+            target = cfg.boost_temp
         if not target:
             climate = self.hass.states.get(cfg.entity)
             if climate is not None:
@@ -329,7 +344,25 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
         )
 
     async def _turn_on(self, cfg: DeviceConfig) -> None:
-        if cfg.device_type == DEVICE_TYPE_CLIMATE:
+        if cfg.device_type == DEVICE_TYPE_SETPOINT:
+            # Snapshot the schedule's current setpoint so it can be restored
+            # when the boost ends; the user's time-based automations remain
+            # the source of truth for the normal temperature.
+            state = self.hass.states.get(cfg.entity)
+            if state is not None:
+                try:
+                    current = float(state.attributes.get("temperature"))
+                except (TypeError, ValueError):
+                    current = None
+                if current is not None and current < cfg.boost_temp - 0.1:
+                    self._restore_temp[cfg.name] = current
+            await self.hass.services.async_call(
+                "climate",
+                "set_temperature",
+                {"entity_id": cfg.entity, "temperature": cfg.boost_temp},
+                blocking=True,
+            )
+        elif cfg.device_type == DEVICE_TYPE_CLIMATE:
             await self.hass.services.async_call(
                 "climate",
                 "set_hvac_mode",
@@ -342,7 +375,19 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
             )
 
     async def _turn_off(self, cfg: DeviceConfig) -> None:
-        if cfg.device_type == DEVICE_TYPE_CLIMATE:
+        if cfg.device_type == DEVICE_TYPE_SETPOINT:
+            # Restore the pre-boost setpoint; fall back to the configured
+            # normal temperature when it is unknown (e.g. after a restart).
+            restore = self._restore_temp.pop(cfg.name, None)
+            if restore is None:
+                restore = cfg.restore_temp
+            await self.hass.services.async_call(
+                "climate",
+                "set_temperature",
+                {"entity_id": cfg.entity, "temperature": restore},
+                blocking=True,
+            )
+        elif cfg.device_type == DEVICE_TYPE_CLIMATE:
             await self.hass.services.async_call(
                 "climate",
                 "set_hvac_mode",

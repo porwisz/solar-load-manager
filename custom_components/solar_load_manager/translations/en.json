@@ -91,7 +91,7 @@
         "data_description": {
           "name": "Shown in entity names and used in the boost service. Renaming later creates new entities.",
           "priority": "1 = served first. When surplus shrinks, the highest number is shed first.",
-          "device_type": "switch: anything with on/off. climate: thermostat controlled via HVAC mode. tesla: EV charging with amp modulation.",
+          "device_type": "switch: anything with on/off. climate: thermostat controlled via HVAC mode. tesla: EV charging with amp modulation. setpoint: raises a climate setpoint (e.g. DHW to 55°C) while surplus lasts, then restores it.",
           "min_on_minutes": "Once started, the device keeps running at least this long - protects compressors and heaters from short cycling.",
           "min_off_minutes": "Once stopped, the device stays off at least this long before the manager may restart it.",
           "must_run_enabled": "Force the device on daily within the window below, regardless of sun and price - a comfort guarantee.",
@@ -118,7 +118,7 @@
         },
         "data_description": {
           "priority": "1 = served first. When surplus shrinks, the highest number is shed first.",
-          "device_type": "switch: anything with on/off. climate: thermostat controlled via HVAC mode. tesla: EV charging with amp modulation.",
+          "device_type": "switch: anything with on/off. climate: thermostat controlled via HVAC mode. tesla: EV charging with amp modulation. setpoint: raises a climate setpoint (e.g. DHW to 55°C) while surplus lasts, then restores it.",
           "min_on_minutes": "Once started, the device keeps running at least this long - protects compressors and heaters from short cycling.",
           "min_off_minutes": "Once stopped, the device stays off at least this long before the manager may restart it.",
           "must_run_enabled": "Force the device on daily within the window below, regardless of sun and price - a comfort guarantee.",
@@ -148,6 +148,28 @@
           "target_temp_off": "Safeguard: when the current temperature reaches the target, the device is forced off - bypassing minimum run time and manual override. Recommended for hot tubs and heaters.",
           "temp_entity": "Sensor or climate entity to read the current temperature from. Leave empty to use the controlled entity's own current_temperature attribute.",
           "target_temp": "Fixed target. Leave 0 to use the controlled climate entity's own setpoint."
+        }
+      },
+      "setpoint": {
+        "title": "Setpoint boost (DHW)",
+        "description": "Step 2 of 2: which climate entity to boost and how much power the heater draws. While surplus lasts, the setpoint is raised to the boost temperature; afterwards the setpoint seen before the boost is restored, so your existing time-based setpoint automations keep working.",
+        "data": {
+          "entity": "Climate entity (water heater setpoint)",
+          "rated_power": "Rated power [W]",
+          "on_factor": "Turn-on factor",
+          "boost_temp": "Boost temperature",
+          "restore_temp": "Fallback restore temperature",
+          "target_temp_off": "Release at boost temperature",
+          "temp_entity": "Water temperature source (optional)"
+        },
+        "data_description": {
+          "entity": "The climate entity whose target temperature is raised, e.g. the heat pump's DHW setpoint.",
+          "rated_power": "Power the heater draws while heating. The manager reserves this much surplus for the boost.",
+          "on_factor": "Safety margin for starting: with 1.1 the boost starts only when the surplus covers 110% of the rated power.",
+          "boost_temp": "Setpoint applied while boosting, e.g. 55.",
+          "restore_temp": "Used only when the pre-boost setpoint is unknown (e.g. after a Home Assistant restart). Normally the setpoint seen right before the boost is restored.",
+          "target_temp_off": "Safeguard: once the water reaches the boost temperature, the boost is released immediately - the reserved surplus becomes available to other devices.",
+          "temp_entity": "Sensor or climate entity to read the water temperature from. Leave empty to use the controlled entity's own current_temperature attribute."
         }
       },
       "tesla": {

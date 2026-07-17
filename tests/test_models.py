@@ -352,3 +352,31 @@ def test_marginal_price_export_margin():
     assert marginal_price(0.05, 0.13, 0.90, export_margin_kwh=0.2) == (0.90, "buy")
     # balance clears the margin -> sell price
     assert marginal_price(0.25, 0.13, 0.90, export_margin_kwh=0.2) == (0.13, "sell")
+
+
+# --- setpoint (DHW boost) devices ------------------------------------------
+
+def setpoint(**kw):
+    return DeviceConfig(name="cwu", priority=1, device_type="setpoint",
+                        entity="climate.cwu", rated_power=2000,
+                        boost_temp=55.0, restore_temp=45.0, **kw)
+
+
+def test_setpoint_boosts_on_surplus():
+    res = run([(setpoint(), inp())], surplus=3000)
+    assert res["cwu"].should_be_on is True
+    assert res["cwu"].reason == "running_surplus"
+    assert res["cwu"].allocated_w == 2000
+
+
+def test_setpoint_releases_without_surplus():
+    res = run([(setpoint(), inp(is_on=True))], surplus=-3000)
+    assert res["cwu"].should_be_on is False
+    assert res["cwu"].reason == "insufficient_surplus"
+
+
+def test_setpoint_temp_reached_releases_boost():
+    res = run([(setpoint(target_temp_off=True), inp(is_on=True, temp_reached=True))],
+              surplus=5000)
+    assert res["cwu"].should_be_on is False
+    assert res["cwu"].reason == "target_reached"

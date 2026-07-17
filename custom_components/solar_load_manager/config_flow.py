@@ -11,6 +11,7 @@ from homeassistant.core import callback
 from homeassistant.helpers import selector
 
 from .const import (
+    CONF_BOOST_TEMP,
     CONF_BUY_PRICE_ATTRIBUTE,
     CONF_BUY_PRICE_SENSOR,
     CONF_CHEAP_PRICE,
@@ -45,11 +46,13 @@ from .const import (
     CONF_PRIORITY,
     CONF_RATED_POWER,
     CONF_REFRESH_BUTTON,
+    CONF_RESTORE_TEMP,
     CONF_SMOOTHING_SECONDS,
     CONF_TARGET_TEMP,
     CONF_TARGET_TEMP_OFF,
     CONF_TEMP_ENTITY,
     CONF_VOLTAGE,
+    DEFAULT_BOOST_TEMP,
     DEFAULT_CHEAP_PRICE,
     DEFAULT_EXCLUSIVE,
     DEFAULT_EXPORT_MARGIN,
@@ -62,9 +65,11 @@ from .const import (
     DEFAULT_ON_FACTOR,
     DEFAULT_OVERRIDE_MINUTES,
     DEFAULT_PHASES,
+    DEFAULT_RESTORE_TEMP,
     DEFAULT_SMOOTHING_SECONDS,
     DEFAULT_VOLTAGE,
     DEVICE_TYPE_CLIMATE,
+    DEVICE_TYPE_SETPOINT,
     DEVICE_TYPE_SWITCH,
     DEVICE_TYPE_TESLA,
     DEVICE_TYPES,
@@ -99,6 +104,8 @@ def device_from_dict(data: dict[str, Any]) -> DeviceConfig:
         target_temp_off=bool(data.get(CONF_TARGET_TEMP_OFF, False)),
         temp_entity=data.get(CONF_TEMP_ENTITY, ""),
         target_temp=float(data[CONF_TARGET_TEMP]) if data.get(CONF_TARGET_TEMP) else None,
+        boost_temp=float(data.get(CONF_BOOST_TEMP, DEFAULT_BOOST_TEMP)),
+        restore_temp=float(data.get(CONF_RESTORE_TEMP, DEFAULT_RESTORE_TEMP)),
         must_run_enabled=bool(data.get(CONF_MUST_RUN_ENABLED, False)),
         must_run_start=_parse_time(data.get(CONF_MUST_RUN_START)),
         must_run_end=_parse_time(data.get(CONF_MUST_RUN_END)),
@@ -266,6 +273,47 @@ class SlmOptionsFlow(OptionsFlow):
             }
         )
 
+    def _setpoint_schema(self, existing: dict[str, Any] | None = None) -> vol.Schema:
+        """Step 2 for setpoint (DHW boost) devices."""
+        e = existing or {}
+        entity_key = (
+            vol.Required(CONF_ENTITY, default=e[CONF_ENTITY])
+            if e.get(CONF_ENTITY)
+            else vol.Required(CONF_ENTITY)
+        )
+        return vol.Schema(
+            {
+                entity_key: selector.EntitySelector(
+                    selector.EntitySelectorConfig(domain="climate")
+                ),
+                vol.Required(
+                    CONF_RATED_POWER, default=e.get(CONF_RATED_POWER, 2000)
+                ): vol.Coerce(float),
+                vol.Optional(
+                    CONF_ON_FACTOR, default=e.get(CONF_ON_FACTOR, DEFAULT_ON_FACTOR)
+                ): vol.Coerce(float),
+                vol.Required(
+                    CONF_BOOST_TEMP, default=e.get(CONF_BOOST_TEMP, DEFAULT_BOOST_TEMP)
+                ): vol.Coerce(float),
+                vol.Required(
+                    CONF_RESTORE_TEMP,
+                    default=e.get(CONF_RESTORE_TEMP, DEFAULT_RESTORE_TEMP),
+                ): vol.Coerce(float),
+                vol.Optional(
+                    CONF_TARGET_TEMP_OFF, default=e.get(CONF_TARGET_TEMP_OFF, True)
+                ): bool,
+                **(
+                    {vol.Optional(CONF_TEMP_ENTITY, default=e[CONF_TEMP_ENTITY]): selector.EntitySelector(
+                        selector.EntitySelectorConfig(domain=["sensor", "climate"])
+                    )}
+                    if e.get(CONF_TEMP_ENTITY)
+                    else {vol.Optional(CONF_TEMP_ENTITY): selector.EntitySelector(
+                        selector.EntitySelectorConfig(domain=["sensor", "climate"])
+                    )}
+                ),
+            }
+        )
+
     def _tesla_schema(self, existing: dict[str, Any] | None = None) -> vol.Schema:
         e = existing or {}
 
@@ -333,6 +381,8 @@ class SlmOptionsFlow(OptionsFlow):
                 self._pending = user_input
                 if user_input[CONF_DEVICE_TYPE] == DEVICE_TYPE_TESLA:
                     return await self.async_step_tesla()
+                if user_input[CONF_DEVICE_TYPE] == DEVICE_TYPE_SETPOINT:
+                    return await self.async_step_setpoint()
                 return await self.async_step_onoff()
         return self.async_show_form(
             step_id="add_device", data_schema=self._device_schema(), errors=errors
@@ -367,6 +417,8 @@ class SlmOptionsFlow(OptionsFlow):
         self._pending = {**existing, **user_input}
         if user_input[CONF_DEVICE_TYPE] == DEVICE_TYPE_TESLA:
             return await self.async_step_tesla()
+        if user_input[CONF_DEVICE_TYPE] == DEVICE_TYPE_SETPOINT:
+            return await self.async_step_setpoint()
         return await self.async_step_onoff()
 
     async def async_step_onoff(self, user_input: dict[str, Any] | None = None):
@@ -376,6 +428,15 @@ class SlmOptionsFlow(OptionsFlow):
             return self._save_device(device, replace=self._edit_name)
         return self.async_show_form(
             step_id="onoff", data_schema=self._onoff_schema(self._pending)
+        )
+
+    async def async_step_setpoint(self, user_input: dict[str, Any] | None = None):
+        """Second step for setpoint (DHW boost) devices."""
+        if user_input is not None:
+            device = {**self._pending, **user_input}
+            return self._save_device(device, replace=self._edit_name)
+        return self.async_show_form(
+            step_id="setpoint", data_schema=self._setpoint_schema(self._pending)
         )
 
     async def async_step_tesla(self, user_input: dict[str, Any] | None = None):

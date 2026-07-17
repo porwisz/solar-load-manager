@@ -29,6 +29,7 @@ backs off for a configurable period (default 30 minutes).
 | `switch` | `homeassistant.turn_on` / `turn_off` on any switch-like entity |
 | `climate` | `climate.set_hvac_mode` (configured mode / `off`) |
 | `tesla` | modulates charging amps to match the remaining surplus; stops below minimum amps; charges at max amps when the price is cheap |
+| `setpoint` | raises a climate entity's target temperature (e.g. heat-pump DHW to 55 °C) while surplus lasts; on release restores the setpoint seen before the boost, so existing time-based setpoint automations stay the source of truth. A restart fallback temperature covers the case where the pre-boost value is unknown. |
 
 ### Entities
 
@@ -65,3 +66,6 @@ Device: priority (1 = served first), rated power [W], turn-on factor,
 min on/off minutes, price block score, HVAC mode, guaranteed-run window.
 Tesla adds: charge switch, current number, cable sensor, charger power
 sensor, phases, voltage, min/max amps.
+Setpoint adds: climate entity, boost temperature, fallback restore
+temperature, release-at-boost-temperature safeguard, water temperature
+source.
