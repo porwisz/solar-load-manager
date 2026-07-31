@@ -208,8 +208,15 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
                     limit = self._float_state(cfg.charge_limit_entity)
                     if level is not None and limit is not None:
                         inp.battery_full = level >= limit
+            if cfg.target_temp_off or cfg.hysteresis > 0:
+                inp.current_temp = self._current_temp(cfg)
+                inp.effective_target = self._effective_target(cfg)
             if cfg.target_temp_off:
-                inp.temp_reached = self._temp_reached(cfg)
+                inp.temp_reached = (
+                    inp.current_temp is not None
+                    and inp.effective_target is not None
+                    and inp.current_temp >= inp.effective_target
+                )
             pairs.append((cfg, inp))
 
         decisions = allocate(
@@ -260,33 +267,35 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
         self._last_balance_ts = now
         return self._ema
 
-    def _temp_reached(self, cfg: DeviceConfig) -> bool:
-        """True when the device's current temperature is at/above its target."""
+    def _current_temp(self, cfg: DeviceConfig) -> float | None:
+        """Temperature the device regulates, from its temp source or itself."""
         source = cfg.temp_entity or cfg.entity
         state = self.hass.states.get(source)
         if state is None or state.state in ("unknown", "unavailable"):
-            return False
+            return None
         current = state.attributes.get("current_temperature")
         if current is None:
-            try:
-                current = float(state.state)
-            except (TypeError, ValueError):
-                return False
+            current = state.state
+        try:
+            return float(current)
+        except (TypeError, ValueError):
+            return None
+
+    def _effective_target(self, cfg: DeviceConfig) -> float | None:
+        """Setpoint the device heats to once the manager turns it on."""
         target = cfg.target_temp
         if not target and cfg.device_type == DEVICE_TYPE_SETPOINT:
-            # For setpoint devices the guard asks "is boosting still useful?",
-            # so compare against the boost target, not the current setpoint.
+            # For setpoint devices the manager commands the boost setpoint,
+            # so that - not the schedule's current value - is the target.
             target = cfg.boost_temp
         if not target:
             climate = self.hass.states.get(cfg.entity)
             if climate is not None:
                 target = climate.attributes.get("temperature")
-        if target is None:
-            return False
         try:
-            return float(current) >= float(target)
+            return float(target) if target is not None else None
         except (TypeError, ValueError):
-            return False
+            return None
 
     # -- actuation ---------------------------------------------------------
 

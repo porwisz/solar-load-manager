@@ -138,7 +138,8 @@
           "hvac_mode": "Tryb HVAC (tylko climate)",
           "target_temp_off": "Wyłącz po osiągnięciu temperatury",
           "temp_entity": "Źródło temperatury (opcjonalne)",
-          "target_temp": "Temperatura docelowa (0 = automatycznie)"
+          "target_temp": "Temperatura docelowa (0 = automatycznie)",
+          "hysteresis": "Histereza termostatu [K] (0 = wyłączone)"
         },
         "data_description": {
           "entity": "Encja switch lub climate, którą menedżer włącza i wyłącza.",
@@ -147,7 +148,8 @@
           "hvac_mode": "Tryb ustawiany przy włączeniu encji climate (heat dla jacuzzi/bojlera, cool dla klimatyzacji). Ignorowany dla switchy.",
           "target_temp_off": "Zabezpieczenie: gdy aktualna temperatura osiągnie docelową, urządzenie jest wyłączane - z pominięciem minimalnego czasu pracy i ręcznego nadpisania. Zalecane dla jacuzzi i grzałek.",
           "temp_entity": "Czujnik lub encja climate, z której czytana jest aktualna temperatura. Puste = atrybut current_temperature sterowanej encji.",
-          "target_temp": "Stała wartość docelowa. Zostaw 0, aby użyć nastawy sterowanej encji climate."
+          "target_temp": "Stała wartość docelowa. Zostaw 0, aby użyć nastawy sterowanej encji climate.",
+          "hysteresis": "Histereza własnego termostatu urządzenia. Przy 3 urządzenie ruszy dopiero, gdy temperatura spadnie 3 stopnie poniżej celu; wcześniej menedżer nie rezerwuje dla niego nadwyżki. Dla urządzeń bez termostatu zostaw 0."
         }
       },
       "setpoint": {
@@ -160,7 +162,8 @@
           "boost_temp": "Temperatura podbicia",
           "restore_temp": "Awaryjna temperatura powrotu",
           "target_temp_off": "Zwolnij po osiągnięciu temperatury podbicia",
-          "temp_entity": "Źródło temperatury wody (opcjonalne)"
+          "temp_entity": "Źródło temperatury wody (opcjonalne)",
+          "hysteresis": "Histereza pompy ciepła [K] (0 = wyłączone)"
         },
         "data_description": {
           "entity": "Encja climate, której temperatura zadana jest podnoszona, np. nastawa CWU pompy ciepła.",
@@ -169,7 +172,8 @@
           "boost_temp": "Nastawa stosowana podczas podbicia, np. 55.",
           "restore_temp": "Używana tylko, gdy nastawa sprzed podbicia jest nieznana (np. po restarcie Home Assistanta). Normalnie przywracana jest nastawa zapamiętana tuż przed podbiciem.",
           "target_temp_off": "Zabezpieczenie: gdy woda osiągnie temperaturę podbicia, podbicie jest natychmiast zwalniane - zarezerwowana nadwyżka wraca do innych urządzeń.",
-          "temp_entity": "Czujnik lub encja climate, z której czytana jest temperatura wody. Puste = atrybut current_temperature sterowanej encji."
+          "temp_entity": "Czujnik lub encja climate, z której czytana jest temperatura wody. Puste = atrybut current_temperature sterowanej encji.",
+          "hysteresis": "Histereza termostatu CWU pompy ciepła, np. 8. Sprężarka rusza dopiero, gdy woda spadnie 8 stopni poniżej temperatury boostu, więc przy booście 55 startuje poniżej 47. Powyżej tej wartości boost i tak nic nie zmieni, więc menedżer go pomija i zostawia nadwyżkę innym urządzeniom."
         }
       },
       "tesla": {

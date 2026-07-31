@@ -138,7 +138,8 @@
           "hvac_mode": "HVAC mode (climate only)",
           "target_temp_off": "Turn off at target temperature",
           "temp_entity": "Temperature source (optional)",
-          "target_temp": "Target temperature (0 = automatic)"
+          "target_temp": "Target temperature (0 = automatic)",
+          "hysteresis": "Thermostat hysteresis [K] (0 = off)"
         },
         "data_description": {
           "entity": "The switch or climate entity the manager turns on and off.",
@@ -147,7 +148,8 @@
           "hvac_mode": "Mode set when a climate device is turned on (heat for jacuzzi/boiler, cool for AC). Ignored for switches.",
           "target_temp_off": "Safeguard: when the current temperature reaches the target, the device is forced off - bypassing minimum run time and manual override. Recommended for hot tubs and heaters.",
           "temp_entity": "Sensor or climate entity to read the current temperature from. Leave empty to use the controlled entity's own current_temperature attribute.",
-          "target_temp": "Fixed target. Leave 0 to use the controlled climate entity's own setpoint."
+          "target_temp": "Fixed target. Leave 0 to use the controlled climate entity's own setpoint.",
+          "hysteresis": "Switching differential of the device's own thermostat. With 3 the device only starts once the temperature is 3 degrees below the target; until then the manager will not reserve surplus for it. Leave 0 for devices without a thermostat."
         }
       },
       "setpoint": {
@@ -160,7 +162,8 @@
           "boost_temp": "Boost temperature",
           "restore_temp": "Fallback restore temperature",
           "target_temp_off": "Release at boost temperature",
-          "temp_entity": "Water temperature source (optional)"
+          "temp_entity": "Water temperature source (optional)",
+          "hysteresis": "Heat pump hysteresis [K] (0 = off)"
         },
         "data_description": {
           "entity": "The climate entity whose target temperature is raised, e.g. the heat pump's DHW setpoint.",
@@ -169,7 +172,8 @@
           "boost_temp": "Setpoint applied while boosting, e.g. 55.",
           "restore_temp": "Used only when the pre-boost setpoint is unknown (e.g. after a Home Assistant restart). Normally the setpoint seen right before the boost is restored.",
           "target_temp_off": "Safeguard: once the water reaches the boost temperature, the boost is released immediately - the reserved surplus becomes available to other devices.",
-          "temp_entity": "Sensor or climate entity to read the water temperature from. Leave empty to use the controlled entity's own current_temperature attribute."
+          "temp_entity": "Sensor or climate entity to read the water temperature from. Leave empty to use the controlled entity's own current_temperature attribute.",
+          "hysteresis": "Switching differential of the heat pump's DHW thermostat, e.g. 8. The compressor only starts once the water drops 8 degrees below the boost temperature, so with a boost of 55 it fires below 47. Above that the boost would change nothing, so the manager skips it and leaves the surplus to other devices."
         }
       },
       "tesla": {

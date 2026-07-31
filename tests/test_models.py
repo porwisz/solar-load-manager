@@ -380,3 +380,62 @@ def test_setpoint_temp_reached_releases_boost():
               surplus=5000)
     assert res["cwu"].should_be_on is False
     assert res["cwu"].reason == "target_reached"
+
+
+# --- thermostat hysteresis --------------------------------------------------
+
+def test_hysteresis_blocks_boost_that_would_not_start():
+    # 8 K differential, boost to 55 -> the compressor only fires below 47.
+    res = run([(setpoint(hysteresis=8.0),
+                inp(current_temp=50.0, effective_target=55.0))], surplus=5000)
+    assert res["cwu"].should_be_on is False
+    assert res["cwu"].reason == "hysteresis_idle"
+    assert res["cwu"].allocated_w == 0
+
+
+def test_hysteresis_allows_boost_below_cut_in():
+    res = run([(setpoint(hysteresis=8.0),
+                inp(current_temp=46.0, effective_target=55.0))], surplus=5000)
+    assert res["cwu"].should_be_on is True
+    assert res["cwu"].reason == "running_surplus"
+
+
+def test_hysteresis_idle_leaves_budget_to_others():
+    other = dev("jacuzzi", 2, power=2000)
+    res = run(
+        [
+            (setpoint(hysteresis=8.0), inp(current_temp=50.0, effective_target=55.0)),
+            (other, inp()),
+        ],
+        surplus=2500,
+        exclusive=True,
+    )
+    assert res["cwu"].reason == "hysteresis_idle"
+    assert res["jacuzzi"].should_be_on is True
+
+
+def test_hysteresis_does_not_stop_a_running_device():
+    # Once heating, the pump runs up to the setpoint; only target_reached ends it.
+    res = run([(setpoint(hysteresis=8.0),
+                inp(is_on=True, current_temp=52.0, effective_target=55.0))],
+              surplus=5000)
+    assert res["cwu"].should_be_on is True
+    assert res["cwu"].reason == "running_surplus"
+
+
+def test_hysteresis_blocks_must_run_and_cheap_forcing():
+    cfg = setpoint(hysteresis=8.0, must_run_enabled=True,
+                   must_run_start=time(11, 0), must_run_end=time(13, 0))
+    res = run([(cfg, inp(current_temp=50.0, effective_target=55.0))],
+              surplus=-5000, price=0.0)
+    assert res["cwu"].reason == "hysteresis_idle"
+
+
+def test_hysteresis_zero_keeps_old_behaviour():
+    res = run([(setpoint(), inp(current_temp=54.0, effective_target=55.0))], surplus=5000)
+    assert res["cwu"].should_be_on is True
+
+
+def test_hysteresis_ignored_without_temperature_reading():
+    res = run([(setpoint(hysteresis=8.0), inp())], surplus=5000)
+    assert res["cwu"].should_be_on is True

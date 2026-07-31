@@ -31,6 +31,7 @@ from .const import (
     CONF_DEVICES,
     CONF_ENTITY,
     CONF_HVAC_MODE,
+    CONF_HYSTERESIS,
     CONF_IMPORT_TOLERANCE,
     CONF_MAX_AMPS,
     CONF_MIN_AMPS,
@@ -57,6 +58,7 @@ from .const import (
     DEFAULT_EXCLUSIVE,
     DEFAULT_EXPORT_MARGIN,
     DEFAULT_MAX_PRICE,
+    DEFAULT_HYSTERESIS,
     DEFAULT_IMPORT_TOLERANCE,
     DEFAULT_MAX_AMPS,
     DEFAULT_MIN_AMPS,
@@ -104,6 +106,7 @@ def device_from_dict(data: dict[str, Any]) -> DeviceConfig:
         target_temp_off=bool(data.get(CONF_TARGET_TEMP_OFF, False)),
         temp_entity=data.get(CONF_TEMP_ENTITY, ""),
         target_temp=float(data[CONF_TARGET_TEMP]) if data.get(CONF_TARGET_TEMP) else None,
+        hysteresis=float(data.get(CONF_HYSTERESIS, DEFAULT_HYSTERESIS)),
         boost_temp=float(data.get(CONF_BOOST_TEMP, DEFAULT_BOOST_TEMP)),
         restore_temp=float(data.get(CONF_RESTORE_TEMP, DEFAULT_RESTORE_TEMP)),
         must_run_enabled=bool(data.get(CONF_MUST_RUN_ENABLED, False)),
@@ -270,6 +273,9 @@ class SlmOptionsFlow(OptionsFlow):
                 vol.Optional(
                     CONF_TARGET_TEMP, default=e.get(CONF_TARGET_TEMP, 0)
                 ): vol.Coerce(float),
+                vol.Optional(
+                    CONF_HYSTERESIS, default=e.get(CONF_HYSTERESIS, DEFAULT_HYSTERESIS)
+                ): vol.Coerce(float),
             }
         )
 
@@ -298,6 +304,9 @@ class SlmOptionsFlow(OptionsFlow):
                 vol.Required(
                     CONF_RESTORE_TEMP,
                     default=e.get(CONF_RESTORE_TEMP, DEFAULT_RESTORE_TEMP),
+                ): vol.Coerce(float),
+                vol.Optional(
+                    CONF_HYSTERESIS, default=e.get(CONF_HYSTERESIS, DEFAULT_HYSTERESIS)
                 ): vol.Coerce(float),
                 vol.Optional(
                     CONF_TARGET_TEMP_OFF, default=e.get(CONF_TARGET_TEMP_OFF, True)

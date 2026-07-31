@@ -139,6 +139,9 @@ For each configured device the coordinator builds a `DeviceInput`:
   ≥ target. Target resolution order: configured `target_temp` → for setpoint
   devices the `boost_temp` (the guard asks "is boosting still useful?") →
   the climate entity's own `temperature` attribute.
+- **current_temp / effective_target** — read whenever `target_temp_off` or
+  `hysteresis` is set; they feed both `temp_reached` and the hysteresis gate
+  (§6.2).
 - **solar_only** — the configured flag, overridable at runtime by the
   per-device "solar only" switch (restored across restarts).
 
@@ -169,6 +172,15 @@ Highest to lowest precedence:
 | 3 | tesla and cable disconnected | OFF, `cable_disconnected` (no actuation) |
 | 4 | tesla and battery at charge limit | force OFF, `battery_full` |
 | 5 | manual override active | keep current state, `manual_override` (no actuation) |
+| 6 | `hysteresis` set, device OFF, and `current_temp > target − hysteresis` | OFF, `hysteresis_idle`, **claims no budget** |
+
+Gate 6 models the device's *own* thermostat. A heat-pump DHW tank with an
+8 K switching differential and a 55 °C boost only starts the compressor
+below 47 °C; asking for heat at 50 °C changes nothing while still reserving
+`rated_power`. Skipping it hands that surplus to the next device instead.
+It gates **starting** only — a device that is already running keeps going
+up to its setpoint, where `target_reached` (gate 2) releases it. With no
+temperature reading, or `hysteresis = 0`, the gate is inactive.
 
 ### 6.3 Forced-on execution
 
@@ -275,6 +287,7 @@ Per device type:
 | `min_on_minutes` / `min_off_minutes` | 15 / 10 | anti-cycling times |
 | `max_price` | 999 | per-device marginal-price ceiling |
 | `boost_temp` / `restore_temp` | 55 / 45 °C | setpoint device temperatures |
+| `hysteresis` | 0 K (off) | device thermostat's switching differential |
 | `min_amps` / `max_amps` / `phases` / `voltage` | 5 / 16 / 3 / 230 | tesla charging envelope |
 | update interval | 60 s | decision loop period |
 
@@ -283,4 +296,4 @@ Per device type:
 `running_surplus`, `running_cheap`, `must_run`, `boost`, `anti_cycle_hold`,
 `anti_cycle_wait`, `insufficient_surplus`, `waiting_for_priority`,
 `price_blocked`, `target_reached`, `battery_full`, `cable_disconnected`,
-`manual_override`, `disabled`.
+`manual_override`, `hysteresis_idle`, `disabled`.

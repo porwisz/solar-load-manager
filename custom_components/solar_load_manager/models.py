@@ -23,6 +23,10 @@ class DeviceConfig:
     target_temp_off: bool = False  # safeguard: force off once target temp reached
     temp_entity: str = ""
     target_temp: float | None = None
+    # thermostat's own switching differential [K]: it only starts heating once
+    # the temperature drops target - hysteresis below the setpoint. 0 disables
+    # the check.
+    hysteresis: float = 0.0
     # setpoint (DHW boost): "on" raises the climate setpoint to boost_temp,
     # "off" restores the pre-boost setpoint (restore_temp is the fallback
     # when the pre-boost value is unknown, e.g. after a restart)
@@ -74,6 +78,8 @@ class DeviceInput:
     own_power_w: float = 0.0  # tesla: current charging power
     temp_reached: bool = False  # safeguard: target temperature reached
     battery_full: bool = False  # tesla: battery level at/above charge limit
+    current_temp: float | None = None  # temperature the thermostat regulates
+    effective_target: float | None = None  # setpoint it would be given on start
 
 
 @dataclass
@@ -185,6 +191,12 @@ def allocate(
         if inp.override_active:
             decisions[cfg.name] = Decision(inp.is_on, 0.0, None, "manual_override")
             continue
+        if hysteresis_idle(cfg, inp):
+            # The thermostat would not start heating at this temperature, so
+            # commanding it on (or raising its setpoint) draws nothing. Claim
+            # no budget - the surplus belongs to devices that can use it.
+            decisions[cfg.name] = Decision(False, 0.0, None, "hysteresis_idle")
+            continue
 
         if forced_reason:
             amps = cfg.max_amps if cfg.device_type == "tesla" else None
@@ -233,6 +245,22 @@ def allocate(
         slot_taken = slot_taken or decision.should_be_on
 
     return decisions
+
+
+def hysteresis_idle(cfg: DeviceConfig, inp: DeviceInput) -> bool:
+    """True when the thermostat's own hysteresis makes starting a no-op.
+
+    A heat pump with an 8 K differential and a 55 degree setpoint only fires
+    below 47 degrees; asking for heat at 50 changes nothing while still
+    reserving the device's rated power. The check applies to starting only -
+    once the device is running it keeps going up to the setpoint, which is
+    what the target_reached safeguard releases.
+    """
+    if inp.is_on or cfg.hysteresis <= 0:
+        return False
+    if inp.current_temp is None or inp.effective_target is None:
+        return False
+    return inp.current_temp > inp.effective_target - cfg.hysteresis
 
 
 def _guarded_on(

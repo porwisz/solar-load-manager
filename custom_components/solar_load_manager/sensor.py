@@ -150,4 +150,12 @@ class SlmDeviceStatusSensor(CoordinatorEntity[SlmCoordinator], SensorEntity):
                     "battery_full": inp.battery_full,
                 }
             )
+            if self._cfg.hysteresis > 0:
+                attrs["current_temp"] = inp.current_temp
+                attrs["target_temp"] = inp.effective_target
+                attrs["start_below_temp"] = (
+                    round(inp.effective_target - self._cfg.hysteresis, 1)
+                    if inp.effective_target is not None
+                    else None
+                )
         return attrs

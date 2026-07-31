@@ -31,6 +31,12 @@ backs off for a configurable period (default 30 minutes).
 | `tesla` | modulates charging amps to match the remaining surplus; stops below minimum amps; charges at max amps when the price is cheap |
 | `setpoint` | raises a climate entity's target temperature (e.g. heat-pump DHW to 55 °C) while surplus lasts; on release restores the setpoint seen before the boost, so existing time-based setpoint automations stay the source of truth. A restart fallback temperature covers the case where the pre-boost value is unknown. |
 
+Devices with their own thermostat (heat pumps in particular) can declare its
+**hysteresis**. With an 8 K differential and a 55 °C boost the compressor only
+starts below 47 °C — above that, the manager does not reserve surplus for a
+boost that would not run anything, and the power goes to the next device
+instead. Leave it at 0 for devices without a thermostat.
+
 ### Entities
 
 - Hub: `sensor.solar_load_manager_smoothed_surplus`, `sensor.solar_load_manager_price_score`
