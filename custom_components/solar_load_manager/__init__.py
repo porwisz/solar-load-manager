@@ -11,7 +11,7 @@ from homeassistant.helpers import config_validation as cv
 from .const import ATTR_DEVICE, ATTR_MINUTES, DOMAIN, SERVICE_BOOST
 from .coordinator import SlmCoordinator
 
-PLATFORMS = ["sensor", "switch"]
+PLATFORMS = ["number", "sensor", "switch"]
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -50,6 +50,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Apply changed options, reloading only when the entity set changes."""
+    coordinator: SlmCoordinator | None = hass.data.get(DOMAIN, {}).get(entry.entry_id)
+    if coordinator is not None and coordinator.try_apply_options():
+        await coordinator.async_request_refresh()
+        return
     await hass.config_entries.async_reload(entry.entry_id)
 
 

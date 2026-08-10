@@ -19,6 +19,7 @@ from .const import (
     CONF_EXPORT_MARGIN,
     CONF_HOURLY_BALANCE_SENSOR,
     CONF_IMPORT_TOLERANCE,
+    CONF_NAME,
     CONF_OVERRIDE_MINUTES,
     CONF_SELL_PRICE_SENSOR,
     CONF_PRICE_SENSOR,
@@ -90,6 +91,59 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
 
     def _conf(self, key: str, default):
         return self.entry.options.get(key, self.entry.data.get(key, default))
+
+    def option(self, key: str, default):
+        """Current value of a hub-level option."""
+        return self._conf(key, default)
+
+    def device_config(self, name: str) -> DeviceConfig | None:
+        """Current config of a managed device, by name."""
+        for cfg in self.devices:
+            if cfg.name == name:
+                return cfg
+        return None
+
+    # -- options -----------------------------------------------------------
+
+    def try_apply_options(self) -> bool:
+        """Adopt changed options in place, without reloading the entry.
+
+        Returns False when the change adds, removes or retypes a device — the
+        entity set then has to be rebuilt, which only a reload can do. Applying
+        in place keeps the smoothing/trend averages and the anti-cycling
+        timers alive, so tweaking a setting from the dashboard does not reset
+        the decision loop.
+        """
+        new_devices = device_configs_from_entry(self.entry)
+        signature = [(d.name, d.device_type) for d in new_devices]
+        if signature != [(d.name, d.device_type) for d in self.devices]:
+            return False
+        self.devices = new_devices
+        for cfg in new_devices:
+            # Runtime overrides win over the configured defaults; only devices
+            # seen for the first time take their value from the config.
+            self.enabled.setdefault(cfg.name, False)
+            self.solar_only.setdefault(cfg.name, cfg.solar_only)
+        return True
+
+    def async_set_hub_option(self, key: str, value) -> None:
+        """Persist a hub-level option."""
+        options = dict(self.entry.options)
+        options[key] = value
+        self.hass.config_entries.async_update_entry(self.entry, options=options)
+
+    def async_set_device_option(self, name: str, key: str, value) -> None:
+        """Persist one option of one managed device."""
+        options = dict(self.entry.options)
+        devices = [dict(d) for d in options.get(CONF_DEVICES, [])]
+        for device in devices:
+            if device.get(CONF_NAME) == name:
+                device[key] = value
+                break
+        else:
+            raise ValueError(f"Unknown device: {name}")
+        options[CONF_DEVICES] = devices
+        self.hass.config_entries.async_update_entry(self.entry, options=options)
 
     def _float_state(self, entity_id: str | None, attribute: str | None = None) -> float | None:
         if not entity_id:

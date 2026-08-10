@@ -48,7 +48,15 @@ instead. Leave it at 0 for devices without a thermostat.
   **status sensor** (`running_surplus`, `running_cheap`, `must_run`, `boost`,
   `insufficient_surplus`, `anti_cycle_wait`, `manual_override`, …) with
   attributes: allocated watts, target amps, priority, the budget needed to run
-  (`required_w`) and how much surplus is missing right now (`missing_w`).
+  (`required_w`), how much surplus is missing right now (`missing_w`), and the
+  device's own settings so a dashboard can show them without opening the
+  options flow. The hub's surplus sensor carries the hub settings the same way.
+- **Number entities** for the settings that get tuned day to day: `max_price`,
+  `min_on_minutes` and `min_off_minutes` per device, boost/restore temperature
+  for setpoint devices, and the hub's trend weight. Editing one updates the
+  config entry and is applied in place — the integration is not reloaded, so
+  the smoothing averages and anti-cycling timers survive. Everything else stays
+  in the options flow, which does reload on change.
 
 ### Services
 
