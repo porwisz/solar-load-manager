@@ -70,6 +70,10 @@ DEFAULT_SMOOTHING_SECONDS = 300
 # The slow EMA used for the trend spans this many smoothing windows; the
 # difference between the fast and the slow average is the trend [W].
 TREND_SLOW_MULTIPLIER = 4
+# Balance deltas measured this soon after startup are discarded: source
+# sensors restore a stale value first and then jump to the real one, which
+# would otherwise look like a huge burst of power.
+STARTUP_SETTLE_SECONDS = 180
 DEFAULT_TREND_FACTOR = 1.0
 DEFAULT_IMPORT_TOLERANCE = 300
 DEFAULT_CHEAP_PRICE = 0.15

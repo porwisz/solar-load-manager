@@ -32,6 +32,7 @@ from .const import (
     DEFAULT_OVERRIDE_MINUTES,
     DEFAULT_SMOOTHING_SECONDS,
     DEFAULT_TREND_FACTOR,
+    STARTUP_SETTLE_SECONDS,
     TREND_SLOW_MULTIPLIER,
     DEVICE_TYPE_CLIMATE,
     DEVICE_TYPE_SETPOINT,
@@ -76,6 +77,10 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
         self._ema_slow: float | None = None
         self._last_balance: float | None = None
         self._last_balance_ts: datetime | None = None
+        self._started = dt_util.now()
+        # the trend is only meaningful once the slow average has seen a full
+        # window of samples; until then it stays at zero
+        self._trend_ready_at: datetime | None = None
         # runtime state, keyed by device name
         self.enabled: dict[str, bool] = {d.name: False for d in self.devices}
         # runtime override of the configured solar_only flag (switch entity)
@@ -214,7 +219,7 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
         remaining_h = max(0.1, (60 - now_local.minute) / 60)
         bank_w = (balance_kwh or 0.0) * 1000 / remaining_h
         budget_w = (net_w if net_w is not None else 0.0) + bank_w
-        trend_w = self._trend_w()
+        trend_w = self._trend_w(now_local)
 
         sell_price = self._float_state(
             self._conf(CONF_SELL_PRICE_SENSOR, self._conf(CONF_PRICE_SENSOR, None))
@@ -333,7 +338,11 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
         """Derive smoothed net power [W] from the hourly balance sensor."""
         if balance_kwh is None:
             return self._ema
-        if self._last_balance is not None and self._last_balance_ts is not None:
+        # Right after startup the balance sensor may still be restoring a stale
+        # value; the jump to its real value would read as a huge burst of power
+        # and seed both averages with it.
+        settling = (now - self._started).total_seconds() < STARTUP_SETTLE_SECONDS
+        if not settling and self._last_balance is not None and self._last_balance_ts is not None:
             dt = (now - self._last_balance_ts).total_seconds()
             # Skip the sample when the hour rolled over (sensor resets) or
             # time didn't advance.
@@ -343,6 +352,9 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
                 if self._ema is None or window <= 0:
                     self._ema = raw_w
                     self._ema_slow = raw_w
+                    self._trend_ready_at = now + timedelta(
+                        seconds=window * TREND_SLOW_MULTIPLIER
+                    )
                 else:
                     alpha = dt / (window + dt)
                     self._ema += alpha * (raw_w - self._ema)
@@ -356,12 +368,17 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
         self._last_balance_ts = now
         return self._ema
 
-    def _trend_w(self) -> float:
+    def _trend_w(self, now: datetime) -> float:
         """Where the surplus is heading [W]: fast average minus slow average.
 
         Positive while the surplus is rising, negative while it collapses.
+        Zero until the slow average has run for a full window — before that
+        the difference reflects how the averages were seeded, not the PV
+        curve, and would bias every start decision.
         """
         if self._ema is None or self._ema_slow is None:
+            return 0.0
+        if self._trend_ready_at is None or now < self._trend_ready_at:
             return 0.0
         return self._ema - self._ema_slow
 

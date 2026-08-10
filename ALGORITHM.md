@@ -42,7 +42,10 @@ raw_w = (balance_kwh - previous_balance_kwh) * 3_600_000 / dt_seconds
 ```
 
 - Samples are **skipped** when the hour rolled over (sensor reset:
-  `now.hour != last.hour`), or when `dt <= 0` or `dt >= 1800 s`.
+  `now.hour != last.hour`), when `dt <= 0` or `dt >= 1800 s`, or during the
+  first `STARTUP_SETTLE_SECONDS = 180` after startup — a balance sensor that
+  restores a stale value and then jumps to the real one would otherwise seed
+  the averages with a burst of power that never happened.
 - The raw value is smoothed with an **exponential moving average**:
   `alpha = dt / (smoothing_window + dt)`; default window
   `smoothing_seconds = 300`. Window ≤ 0 disables smoothing.
@@ -115,7 +118,9 @@ safe direction.
 **Trend.** `trend_w` is the fast EMA minus a slow EMA of the same net-power
 signal (the slow window is `TREND_SLOW_MULTIPLIER = 4` × the smoothing
 window), so it is positive while the surplus rises and negative while it
-collapses. Weighted by `trend_factor` (default 1.0, 0 disables) it shifts the
+collapses. It stays at **zero until the slow average has run for a full
+window**; before that the difference only reflects how the two averages were
+seeded. Weighted by `trend_factor` (default 1.0, 0 disables) it shifts the
 start threshold: a device does not start into a collapsing PV curve, and
 starts sooner into a rising one. Smoothing alone cannot do this — an EMA lags
 but never extrapolates, so rising and falling surpluses of the same
