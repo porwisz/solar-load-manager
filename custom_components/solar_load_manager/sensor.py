@@ -62,6 +62,7 @@ class SlmSurplusSensor(SlmHubSensor):
             "hourly_balance_kwh": data.get("balance_kwh"),
             "bank_w": data.get("bank_w"),
             "budget_w": data.get("budget_w"),
+            "trend_w": data.get("trend_w"),
         }
 
 

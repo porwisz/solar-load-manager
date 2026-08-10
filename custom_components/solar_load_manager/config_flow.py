@@ -49,6 +49,7 @@ from .const import (
     CONF_REFRESH_BUTTON,
     CONF_RESTORE_TEMP,
     CONF_SMOOTHING_SECONDS,
+    CONF_TREND_FACTOR,
     CONF_TARGET_TEMP,
     CONF_TARGET_TEMP_OFF,
     CONF_TEMP_ENTITY,
@@ -69,6 +70,7 @@ from .const import (
     DEFAULT_PHASES,
     DEFAULT_RESTORE_TEMP,
     DEFAULT_SMOOTHING_SECONDS,
+    DEFAULT_TREND_FACTOR,
     DEFAULT_VOLTAGE,
     DEVICE_TYPE_CLIMATE,
     DEVICE_TYPE_SETPOINT,
@@ -142,6 +144,7 @@ HUB_SCHEMA = vol.Schema(
         vol.Optional(CONF_EXPORT_MARGIN, default=DEFAULT_EXPORT_MARGIN): vol.Coerce(float),
         vol.Optional(CONF_EXCLUSIVE, default=DEFAULT_EXCLUSIVE): bool,
         vol.Optional(CONF_OVERRIDE_MINUTES, default=DEFAULT_OVERRIDE_MINUTES): vol.Coerce(float),
+        vol.Optional(CONF_TREND_FACTOR, default=DEFAULT_TREND_FACTOR): vol.Coerce(float),
     }
 )
 

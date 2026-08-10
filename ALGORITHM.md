@@ -91,6 +91,40 @@ Measured power sensors are read in watts using their own
 `unit_of_measurement` (W, kW or MW), so a charger reporting W is not mistaken
 for kW.
 
+### 3.1 Start budget (`start_budget()`)
+
+Starting is judged against a stricter budget than staying on, the same
+asymmetry `on_factor` already applies:
+
+```
+start = budget
+if min_on_minutes > 0 and bank_w > 0:                  # hour-end commitment
+    usable = min(min_on_minutes, minutes_to_hour_end)
+    start -= bank_w * (1 - usable / min_on_minutes)
+start += trend_w * trend_factor                        # trend
+```
+
+**Hour-end commitment.** Starting commits the device for `min_on_minutes`,
+but the bank expires when the hour rolls over. Without this correction, a
+device started at minute 55 with `min_on = 15` would run 10 minutes into the
+next hour, where the bank is zero and every kWh is paid at the tariff — and
+the `max(0.1, …)` clamp makes the bank largest exactly there. Only a positive
+bank is discounted; a negative one keeps discouraging the start, which is the
+safe direction.
+
+**Trend.** `trend_w` is the fast EMA minus a slow EMA of the same net-power
+signal (the slow window is `TREND_SLOW_MULTIPLIER = 4` × the smoothing
+window), so it is positive while the surplus rises and negative while it
+collapses. Weighted by `trend_factor` (default 1.0, 0 disables) it shifts the
+start threshold: a device does not start into a collapsing PV curve, and
+starts sooner into a rising one. Smoothing alone cannot do this — an EMA lags
+but never extrapolates, so rising and falling surpluses of the same
+instantaneous value look identical to it.
+
+Both corrections apply only while the device is off. A running device is
+judged against the plain budget, so neither the hour end nor a falling trend
+sheds it — that is what `min_on_minutes` and the surplus threshold are for.
+
 ## 4. Marginal price (`marginal_price()`)
 
 What does one extra kWh cost right now?
@@ -214,9 +248,12 @@ If exclusive mode and the slot is already taken → guarded off,
 
 ### 6.6 Surplus fit
 
+The comparison uses the **start budget** (§3.1) while the device is OFF and
+the plain budget while it is ON.
+
 - **Tesla** (modulating load):
   ```
-  amps = min(floor(budget / (phases × voltage)), max_amps)
+  amps = min(floor(eval_budget / (phases × voltage)), max_amps)
   ```
   If `amps >= min_amps` → guarded ON at `amps`, claiming
   `amps × watts_per_amp` (`running_surplus`); else → guarded off
@@ -227,11 +264,11 @@ If exclusive mode and the slot is already taken → guarded off,
   threshold = rated_power × on_factor   # when OFF (default factor 1.1 → 10% headroom)
   threshold = rated_power               # when already ON (hysteresis)
   ```
-  `budget >= threshold` → guarded ON claiming `rated_power`; else guarded
-  off.
+  `eval_budget >= threshold` → guarded ON claiming `rated_power`; else
+  guarded off.
 
 Each surplus decision also records `required_w` (budget needed) and
-`missing_w = max(0, threshold − budget)` for the status sensors.
+`missing_w = max(0, threshold − eval_budget)` for the status sensors.
 
 ### 6.7 Anti-cycling guards
 
@@ -275,7 +312,7 @@ Per device type:
 ## 8. Exposed entities and services
 
 - **Hub sensors**: *Smoothed surplus* (W; attributes: hourly balance, bank_w,
-  budget_w) and *Marginal price* (attributes: source, sell/buy price).
+  budget_w, trend_w) and *Marginal price* (attributes: source, sell/buy price).
 - **Per device**: a *status* sensor (state = the decision reason, e.g.
   `running_surplus`, `anti_cycle_hold`, `price_blocked`), an *automation*
   enable switch, and a *solar only* switch (both restore their state).
@@ -288,6 +325,7 @@ Per device type:
 | Parameter | Default | Meaning |
 |---|---|---|
 | `smoothing_seconds` | 300 | EMA window for net power |
+| `trend_factor` | 1.0 | weight of the surplus trend in the start budget (0 disables) |
 | `import_tolerance` | 300 W | allowed grid import before shedding |
 | `cheap_price` | 0.15 | sell price at/below which consuming beats exporting |
 | `export_margin_kwh` | 0.2 | balance hysteresis before hour counts as exporting |

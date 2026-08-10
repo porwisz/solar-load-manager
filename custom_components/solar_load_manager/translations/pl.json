@@ -14,7 +14,8 @@
           "cheap_price": "Próg taniej energii [cena/kWh]",
           "export_margin_kwh": "Margines eksportu (kWh)",
           "override_minutes": "Pauza po ręcznej zmianie [min]",
-          "exclusive_mode": "Tryb wyłączności (jedno urządzenie naraz)"
+          "exclusive_mode": "Tryb wyłączności (jedno urządzenie naraz)",
+          "trend_factor": "Waga trendu nadwyżki"
         },
         "data_description": {
           "hourly_balance_sensor": "Produkcja minus zużycie narastająco w bieżącej godzinie, w kWh (reset co godzinę). Dodatni = na razie eksport netto. Steruje budżetem mocy i tym, która cena obowiązuje.",
@@ -26,7 +27,8 @@
           "cheap_price": "Działa TYLKO przy eksporcie netto: gdy cena sprzedaży (RCE) jest na progu lub niżej, nadwyżka idzie w urządzenia zamiast na sprzedaż. Nigdy nie wymusza poboru z sieci (chyba że cena jest ujemna). Domyślnie 0.15.",
           "export_margin_kwh": "Godzina liczy się jako eksportująca (cena krańcowa RCE, wymuszanie przy taniej cenie) dopiero, gdy bilans tej godziny przekroczy ten margines. Chroni przed migotaniem bilansu wokół zera i ładowaniem z sieci.",
           "override_minutes": "Po ręcznej zmianie urządzenia menedżer nie rusza go przez ten czas. Domyślnie 30 min.",
-          "exclusive_mode": "Działa tylko urządzenie o najwyższym priorytecie; pozostałe czekają, nawet gdy budżet by je pokrył. Boost i okna gwarantowane nadal mają pierwszeństwo. Domyślnie włączony."
+          "exclusive_mode": "Działa tylko urządzenie o najwyższym priorytecie; pozostałe czekają, nawet gdy budżet by je pokrył. Boost i okna gwarantowane nadal mają pierwszeństwo. Domyślnie włączony.",
+          "trend_factor": "Jak mocno rosnąca lub malejąca nadwyżka przesuwa próg startu. Trend to różnica szybkiej i wolnej średniej mocy netto; doliczany jest do budżetu tylko przy starcie urządzenia, więc załamująca się produkcja opóźnia start, a rosnąca go przyspiesza. 0 wyłącza, domyślnie 1.0."
         }
       }
     },
@@ -58,7 +60,8 @@
           "cheap_price": "Próg taniej energii [cena/kWh]",
           "export_margin_kwh": "Margines eksportu (kWh)",
           "override_minutes": "Pauza po ręcznej zmianie [min]",
-          "exclusive_mode": "Tryb wyłączności (jedno urządzenie naraz)"
+          "exclusive_mode": "Tryb wyłączności (jedno urządzenie naraz)",
+          "trend_factor": "Waga trendu nadwyżki"
         },
         "data_description": {
           "hourly_balance_sensor": "Produkcja minus zużycie narastająco w bieżącej godzinie, w kWh (reset co godzinę). Dodatni = na razie eksport netto. Steruje budżetem mocy i tym, która cena obowiązuje.",
@@ -70,7 +73,8 @@
           "cheap_price": "Działa TYLKO przy eksporcie netto: gdy cena sprzedaży (RCE) jest na progu lub niżej, nadwyżka idzie w urządzenia zamiast na sprzedaż. Nigdy nie wymusza poboru z sieci (chyba że cena jest ujemna). Domyślnie 0.15.",
           "export_margin_kwh": "Godzina liczy się jako eksportująca (cena krańcowa RCE, wymuszanie przy taniej cenie) dopiero, gdy bilans tej godziny przekroczy ten margines. Chroni przed migotaniem bilansu wokół zera i ładowaniem z sieci.",
           "override_minutes": "Po ręcznej zmianie urządzenia menedżer nie rusza go przez ten czas. Domyślnie 30 min.",
-          "exclusive_mode": "Działa tylko urządzenie o najwyższym priorytecie; pozostałe czekają, nawet gdy budżet by je pokrył. Boost i okna gwarantowane nadal mają pierwszeństwo. Domyślnie włączony."
+          "exclusive_mode": "Działa tylko urządzenie o najwyższym priorytecie; pozostałe czekają, nawet gdy budżet by je pokrył. Boost i okna gwarantowane nadal mają pierwszeństwo. Domyślnie włączony.",
+          "trend_factor": "Jak mocno rosnąca lub malejąca nadwyżka przesuwa próg startu. Trend to różnica szybkiej i wolnej średniej mocy netto; doliczany jest do budżetu tylko przy starcie urządzenia, więc załamująca się produkcja opóźnia start, a rosnąca go przyspiesza. 0 wyłącza, domyślnie 1.0."
         }
       },
       "add_device": {

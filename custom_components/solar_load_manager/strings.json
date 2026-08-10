@@ -14,7 +14,8 @@
           "cheap_price": "Cheap energy threshold [price/kWh]",
           "export_margin_kwh": "Export margin (kWh)",
           "override_minutes": "Manual override backoff [min]",
-          "exclusive_mode": "Exclusive mode (one device at a time)"
+          "exclusive_mode": "Exclusive mode (one device at a time)",
+          "trend_factor": "Surplus trend weight"
         },
         "data_description": {
           "hourly_balance_sensor": "Net production minus consumption accumulated in the current hour, in kWh (resets each hour). Positive = net exporter so far. This drives both the power budget and which price applies.",
@@ -26,7 +27,8 @@
           "cheap_price": "Applies ONLY while net-exporting: when the sell (RCE) price is at or below this, surplus is burned in devices instead of being sold. Never forces consumption from the grid (unless the price is negative). Default 0.15.",
           "export_margin_kwh": "The hour counts as net-exporting (RCE marginal price, cheap-price forcing) only once this hour's balance exceeds this margin. Guards against a balance flickering around zero triggering grid charging.",
           "override_minutes": "When you change a managed device by hand, the manager leaves it alone for this long. Default 30 min.",
-          "exclusive_mode": "Only the highest-priority eligible device runs; the others wait even if the budget would cover them. Boost and guaranteed-run windows still override. Enabled by default."
+          "exclusive_mode": "Only the highest-priority eligible device runs; the others wait even if the budget would cover them. Boost and guaranteed-run windows still override. Enabled by default.",
+          "trend_factor": "How strongly a rising or falling surplus shifts the start threshold. The trend is the difference between the fast and the slow average of the net power; it is added to the budget only when a device is about to start, so a collapsing PV curve delays the start and a rising one brings it forward. 0 disables it, 1.0 is the default."
         }
       }
     },
@@ -58,7 +60,8 @@
           "cheap_price": "Cheap energy threshold [price/kWh]",
           "export_margin_kwh": "Export margin (kWh)",
           "override_minutes": "Manual override backoff [min]",
-          "exclusive_mode": "Exclusive mode (one device at a time)"
+          "exclusive_mode": "Exclusive mode (one device at a time)",
+          "trend_factor": "Surplus trend weight"
         },
         "data_description": {
           "hourly_balance_sensor": "Net production minus consumption accumulated in the current hour, in kWh (resets each hour). Positive = net exporter so far. This drives both the power budget and which price applies.",
@@ -70,7 +73,8 @@
           "cheap_price": "Applies ONLY while net-exporting: when the sell (RCE) price is at or below this, surplus is burned in devices instead of being sold. Never forces consumption from the grid (unless the price is negative). Default 0.15.",
           "export_margin_kwh": "The hour counts as net-exporting (RCE marginal price, cheap-price forcing) only once this hour's balance exceeds this margin. Guards against a balance flickering around zero triggering grid charging.",
           "override_minutes": "When you change a managed device by hand, the manager leaves it alone for this long. Default 30 min.",
-          "exclusive_mode": "Only the highest-priority eligible device runs; the others wait even if the budget would cover them. Boost and guaranteed-run windows still override. Enabled by default."
+          "exclusive_mode": "Only the highest-priority eligible device runs; the others wait even if the budget would cover them. Boost and guaranteed-run windows still override. Enabled by default.",
+          "trend_factor": "How strongly a rising or falling surplus shifts the start threshold. The trend is the difference between the fast and the slow average of the net power; it is added to the budget only when a device is about to start, so a collapsing PV curve delays the start and a rising one brings it forward. 0 disables it, 1.0 is the default."
         }
       },
       "add_device": {

@@ -135,6 +135,36 @@ def power_to_watts(value: float | None, unit: str | None) -> float | None:
     return value * 1000
 
 
+def start_budget(
+    budget_w: float,
+    bank_w: float,
+    min_on_minutes: float,
+    minutes_to_hour_end: float,
+    trend_w: float = 0.0,
+    trend_factor: float = 0.0,
+) -> float:
+    """Budget a device may rely on when *starting*.
+
+    Two corrections apply to a start and never to keeping a device running,
+    mirroring how on_factor already asks for headroom only on start:
+
+    - **Hour-end commitment.** Starting commits the device for
+      min_on_minutes. The bank is free consumption that expires when the
+      hour rolls over, so the part of that commitment which outlives the
+      hour is not funded by it. Only a positive bank (a credit) is
+      discounted; a negative one keeps discouraging the start, which is the
+      safe direction.
+    - **Trend.** The surplus is projected along its recent trend, so a
+      device does not start into a collapsing PV curve, and starts sooner
+      into a rising one.
+    """
+    budget = budget_w
+    if min_on_minutes > 0 and bank_w > 0:
+        usable = min(min_on_minutes, max(0.0, minutes_to_hour_end))
+        budget -= bank_w * (1 - usable / min_on_minutes)
+    return budget + trend_w * trend_factor
+
+
 def in_window(now: datetime, start: time | None, end: time | None) -> bool:
     """True when now's local time falls in [start, end); handles midnight crossing."""
     if start is None or end is None:
@@ -154,6 +184,10 @@ def allocate(
     import_tolerance: float,
     now: datetime,
     exclusive: bool = False,
+    bank_w: float = 0.0,
+    minutes_to_hour_end: float = 60.0,
+    trend_w: float = 0.0,
+    trend_factor: float = 0.0,
 ) -> dict[str, Decision]:
     """Decide on/off and power allocation for every device.
 
@@ -242,8 +276,21 @@ def allocate(
             budget -= decisions[cfg.name].allocated_w
             continue
 
+        # Starting is judged against a stricter budget than staying on: the
+        # expiring part of the bank is removed and the trend is applied.
+        eval_budget = budget
+        if not inp.is_on:
+            eval_budget = start_budget(
+                budget,
+                bank_w,
+                cfg.min_on_minutes,
+                minutes_to_hour_end,
+                trend_w,
+                trend_factor,
+            )
+
         if cfg.device_type == "tesla":
-            amps = int(budget // cfg.watts_per_amp)
+            amps = int(eval_budget // cfg.watts_per_amp)
             amps = min(amps, cfg.max_amps)
             threshold = cfg.min_amps * cfg.watts_per_amp
             if amps >= cfg.min_amps:
@@ -253,12 +300,12 @@ def allocate(
                 decision = _guarded_off(cfg, inp, "insufficient_surplus")
         else:
             threshold = cfg.rated_power * (cfg.on_factor if not inp.is_on else 1.0)
-            if budget >= threshold:
+            if eval_budget >= threshold:
                 decision = _guarded_on(cfg, inp, cfg.rated_power, None, "running_surplus")
             else:
                 decision = _guarded_off(cfg, inp, "insufficient_surplus")
         decision.required_w = threshold
-        decision.missing_w = max(0.0, threshold - budget)
+        decision.missing_w = max(0.0, threshold - eval_budget)
 
         budget -= decision.allocated_w
         decisions[cfg.name] = decision

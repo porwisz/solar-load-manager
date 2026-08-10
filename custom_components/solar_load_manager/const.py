@@ -10,6 +10,7 @@ CONF_BUY_PRICE_ATTRIBUTE = "buy_price_attribute"
 CONF_CHEAP_PRICE = "cheap_price"
 CONF_EXPORT_MARGIN = "export_margin_kwh"
 CONF_EXCLUSIVE = "exclusive_mode"
+CONF_TREND_FACTOR = "trend_factor"
 # legacy (pre-1.1) keys, still read for migration
 CONF_SURPLUS_SENSOR = "surplus_sensor"
 CONF_PRICE_SENSOR = "price_sensor"
@@ -66,6 +67,10 @@ DEVICE_TYPES = [
 ]
 
 DEFAULT_SMOOTHING_SECONDS = 300
+# The slow EMA used for the trend spans this many smoothing windows; the
+# difference between the fast and the slow average is the trend [W].
+TREND_SLOW_MULTIPLIER = 4
+DEFAULT_TREND_FACTOR = 1.0
 DEFAULT_IMPORT_TOLERANCE = 300
 DEFAULT_CHEAP_PRICE = 0.15
 DEFAULT_EXPORT_MARGIN = 0.2

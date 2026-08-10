@@ -14,7 +14,10 @@ A single coordinator runs every 60 seconds:
    hour) … 1 (most expensive hour).
 3. Allocates the power budget (`surplus + import tolerance + power of managed
    devices already running`, counting only devices the manager may switch off)
-   down the priority list. Each device runs when the budget
+   down the priority list. Starting is judged against a stricter *start
+   budget*: the part of the hourly bank that would expire before the device's
+   minimum run time is over does not count, and the surplus trend (rising or
+   collapsing PV) shifts the threshold. Each device runs when the budget
    covers its rated power (× turn-on factor for hysteresis), when the price is
    very cheap (score ≤ threshold), during its guaranteed-run window, or during
    a boost. Shedding happens in reverse priority order.

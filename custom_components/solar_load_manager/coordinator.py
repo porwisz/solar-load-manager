@@ -23,12 +23,15 @@ from .const import (
     CONF_SELL_PRICE_SENSOR,
     CONF_PRICE_SENSOR,
     CONF_SMOOTHING_SECONDS,
+    CONF_TREND_FACTOR,
     DEFAULT_CHEAP_PRICE,
     DEFAULT_EXCLUSIVE,
     DEFAULT_EXPORT_MARGIN,
     DEFAULT_IMPORT_TOLERANCE,
     DEFAULT_OVERRIDE_MINUTES,
     DEFAULT_SMOOTHING_SECONDS,
+    DEFAULT_TREND_FACTOR,
+    TREND_SLOW_MULTIPLIER,
     DEVICE_TYPE_CLIMATE,
     DEVICE_TYPE_SETPOINT,
     DEVICE_TYPE_TESLA,
@@ -68,6 +71,8 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
         self.devices = device_configs_from_entry(entry)
         # net power derived from the hourly balance sensor
         self._ema: float | None = None
+        # slower average of the same signal; fast - slow is the trend
+        self._ema_slow: float | None = None
         self._last_balance: float | None = None
         self._last_balance_ts: datetime | None = None
         # runtime state, keyed by device name
@@ -151,9 +156,11 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
         # Banked hourly balance, spread over the rest of the hour: under
         # hourly net-billing, surplus accumulated earlier this hour can be
         # consumed until the hour ends without paying the tariff.
+        minutes_to_hour_end = 60 - now_local.minute - now_local.second / 60
         remaining_h = max(0.1, (60 - now_local.minute) / 60)
         bank_w = (balance_kwh or 0.0) * 1000 / remaining_h
         budget_w = (net_w if net_w is not None else 0.0) + bank_w
+        trend_w = self._trend_w()
 
         sell_price = self._float_state(
             self._conf(CONF_SELL_PRICE_SENSOR, self._conf(CONF_PRICE_SENSOR, None))
@@ -244,6 +251,10 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
             float(self._conf(CONF_IMPORT_TOLERANCE, DEFAULT_IMPORT_TOLERANCE)),
             now_local,
             exclusive=bool(self._conf(CONF_EXCLUSIVE, DEFAULT_EXCLUSIVE)),
+            bank_w=bank_w,
+            minutes_to_hour_end=minutes_to_hour_end,
+            trend_w=trend_w,
+            trend_factor=float(self._conf(CONF_TREND_FACTOR, DEFAULT_TREND_FACTOR)),
         )
 
         if balance_kwh is not None:
@@ -255,6 +266,7 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
             "balance_kwh": balance_kwh,
             "bank_w": round(bank_w) if balance_kwh is not None else None,
             "budget_w": round(budget_w) if balance_kwh is not None else None,
+            "trend_w": round(trend_w) if balance_kwh is not None else None,
             "price": price,
             "price_source": price_source,
             "sell_price": sell_price,
@@ -276,12 +288,28 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
                 window = float(self._conf(CONF_SMOOTHING_SECONDS, DEFAULT_SMOOTHING_SECONDS))
                 if self._ema is None or window <= 0:
                     self._ema = raw_w
+                    self._ema_slow = raw_w
                 else:
                     alpha = dt / (window + dt)
                     self._ema += alpha * (raw_w - self._ema)
+                    slow_window = window * TREND_SLOW_MULTIPLIER
+                    alpha_slow = dt / (slow_window + dt)
+                    if self._ema_slow is None:
+                        self._ema_slow = raw_w
+                    else:
+                        self._ema_slow += alpha_slow * (raw_w - self._ema_slow)
         self._last_balance = balance_kwh
         self._last_balance_ts = now
         return self._ema
+
+    def _trend_w(self) -> float:
+        """Where the surplus is heading [W]: fast average minus slow average.
+
+        Positive while the surplus is rising, negative while it collapses.
+        """
+        if self._ema is None or self._ema_slow is None:
+            return 0.0
+        return self._ema - self._ema_slow
 
     def _current_temp(self, cfg: DeviceConfig) -> float | None:
         """Temperature the device regulates, from its temp source or itself."""

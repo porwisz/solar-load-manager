@@ -15,6 +15,7 @@ from models import (  # noqa: E402
     in_window,
     marginal_price,
     power_to_watts,
+    start_budget,
 )
 
 NOW = datetime(2026, 7, 2, 12, 0, 0)
@@ -31,8 +32,11 @@ def inp(**kw):
     return DeviceInput(**defaults)
 
 
-def run(pairs, surplus, price=0.5, source="sell", cheap=0.15, tolerance=300, exclusive=False):
-    return allocate(pairs, surplus, price, source, cheap, tolerance, NOW, exclusive=exclusive)
+def run(pairs, surplus, price=0.5, source="sell", cheap=0.15, tolerance=300, exclusive=False,
+        bank=0.0, to_hour_end=60.0, trend=0.0, trend_factor=0.0):
+    return allocate(pairs, surplus, price, source, cheap, tolerance, NOW, exclusive=exclusive,
+                    bank_w=bank, minutes_to_hour_end=to_hour_end, trend_w=trend,
+                    trend_factor=trend_factor)
 
 
 # --- marginal price --------------------------------------------------------
@@ -65,6 +69,33 @@ def test_power_to_watts_defaults_to_kw_and_passes_none():
     assert power_to_watts(4.0, None) == 4000.0
     assert power_to_watts(4.0, "") == 4000.0
     assert power_to_watts(None, "W") is None
+
+
+# --- start budget: hour-end commitment and trend ---------------------------
+
+def test_start_budget_keeps_full_bank_when_commitment_fits_the_hour():
+    # 15 min run, 40 min left in the hour -> the bank is fully usable
+    assert start_budget(5000, bank_w=3000, min_on_minutes=15, minutes_to_hour_end=40) == 5000
+
+
+def test_start_budget_discounts_the_bank_that_expires_with_the_hour():
+    # 15 min run, 5 min left: only 1/3 of the commitment is funded by the bank
+    assert start_budget(5000, bank_w=3000, min_on_minutes=15, minutes_to_hour_end=5) == 3000
+
+
+def test_start_budget_keeps_a_negative_bank_intact():
+    # A debt discourages starting; discounting it would be the unsafe direction
+    assert start_budget(-5000, bank_w=-3000, min_on_minutes=15, minutes_to_hour_end=1) == -5000
+
+
+def test_start_budget_applies_the_trend():
+    assert start_budget(2000, 0, 15, 60, trend_w=-600, trend_factor=1.0) == 1400
+    assert start_budget(2000, 0, 15, 60, trend_w=600, trend_factor=1.0) == 2600
+    assert start_budget(2000, 0, 15, 60, trend_w=-600, trend_factor=0.0) == 2000
+
+
+def test_start_budget_without_minimum_on_time_keeps_the_bank():
+    assert start_budget(5000, bank_w=3000, min_on_minutes=0, minutes_to_hour_end=1) == 5000
 
 
 # --- windows ---------------------------------------------------------------
@@ -164,6 +195,56 @@ def test_shed_on_import():
     assert decisions["cwu"].reason == "insufficient_surplus"
 
 
+def test_no_start_when_the_minimum_run_time_outlives_the_banked_hour():
+    # Budget is mostly bank: 15 min of min_on with 5 min left in the hour means
+    # two thirds of the run would be paid at the tariff.
+    d1 = dev("cwu", 1, 2000, on_factor=0.8, min_on_minutes=15)
+    decisions = run([(d1, inp())], surplus=5000, tolerance=0, bank=6000, to_hour_end=5)
+    assert not decisions["cwu"].should_be_on
+    assert decisions["cwu"].reason == "insufficient_surplus"
+    assert round(decisions["cwu"].missing_w) == 600  # 1600 needed, 1000 usable
+
+
+def test_start_allowed_when_the_commitment_fits_inside_the_hour():
+    d1 = dev("cwu", 1, 2000, on_factor=0.8, min_on_minutes=15)
+    decisions = run([(d1, inp())], surplus=5000, tolerance=0, bank=6000, to_hour_end=40)
+    assert decisions["cwu"].should_be_on
+
+
+def test_running_device_is_not_penalised_at_the_hour_end():
+    # The commitment was already made; only starting is judged more strictly.
+    d1 = dev("cwu", 1, 2000, on_factor=0.8, min_on_minutes=15)
+    decisions = run(
+        [(d1, inp(is_on=True, minutes_since_command=60))],
+        surplus=500, tolerance=0, bank=6000, to_hour_end=1,
+    )
+    assert decisions["cwu"].should_be_on
+    assert decisions["cwu"].reason == "running_surplus"
+
+
+def test_falling_surplus_delays_the_start():
+    d1 = dev("cwu", 1, 2000, on_factor=0.8)
+    on_flat = run([(d1, inp())], surplus=1800, tolerance=0)
+    assert on_flat["cwu"].should_be_on
+    falling = run([(d1, inp())], surplus=1800, tolerance=0, trend=-400, trend_factor=1.0)
+    assert not falling["cwu"].should_be_on
+    assert falling["cwu"].missing_w == 200
+
+
+def test_rising_surplus_brings_the_start_forward():
+    d1 = dev("cwu", 1, 2000, on_factor=0.8)
+    decisions = run([(d1, inp())], surplus=1400, tolerance=0, trend=400, trend_factor=1.0)
+    assert decisions["cwu"].should_be_on
+
+
+def test_trend_does_not_shed_a_running_device():
+    d1 = dev("cwu", 1, 2000, on_factor=0.8, min_on_minutes=0)
+    decisions = run(
+        [(d1, inp(is_on=True))], surplus=100, tolerance=0, trend=-4000, trend_factor=1.0
+    )
+    assert decisions["cwu"].should_be_on  # budget 100 + 2000 rated >= 2000
+
+
 def test_cheap_price_forces_on_while_exporting():
     d1 = dev("cwu", 1, 1500)
     decisions = run([(d1, inp())], surplus=0, price=0.05, source="sell")
@@ -246,6 +327,24 @@ def test_tesla_own_power_included():
     # charging at 11 kW, surplus 0 -> budget 11040 -> 16 A
     decisions = run([(t, inp(is_on=True, own_power_w=11040))], surplus=0, tolerance=0)
     assert decisions["tesla"].target_amps == 16
+
+
+def test_tesla_start_follows_the_trend():
+    t = tesla()
+    flat = run([(t, inp())], surplus=3600, tolerance=0)
+    assert flat["tesla"].should_be_on and flat["tesla"].target_amps == 5
+    falling = run([(t, inp())], surplus=3600, tolerance=0, trend=-300, trend_factor=1.0)
+    assert not falling["tesla"].should_be_on
+    assert falling["tesla"].reason == "insufficient_surplus"
+
+
+def test_tesla_running_ignores_the_start_corrections():
+    t = tesla()
+    decisions = run(
+        [(t, inp(is_on=True, own_power_w=3450, minutes_since_command=60))],
+        surplus=0, tolerance=0, bank=3000, to_hour_end=1, trend=-1000, trend_factor=1.0,
+    )
+    assert decisions["tesla"].should_be_on and decisions["tesla"].target_amps == 5
 
 
 def test_tesla_stops_below_min_amps():
