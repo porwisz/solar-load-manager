@@ -14,6 +14,7 @@ from models import (  # noqa: E402
     allocate,
     in_window,
     marginal_price,
+    power_to_watts,
 )
 
 NOW = datetime(2026, 7, 2, 12, 0, 0)
@@ -49,6 +50,21 @@ def test_marginal_price_missing_inputs():
     assert marginal_price(None, 0.10, 0.62) == (0.62, "buy")
     assert marginal_price(0.5, None, 0.62) == (0.62, "buy")
     assert marginal_price(-1.0, 0.10, None) == (None, "unknown")
+
+
+# --- power units -----------------------------------------------------------
+
+def test_power_to_watts_uses_the_sensor_unit():
+    assert power_to_watts(4000.0, "W") == 4000.0
+    assert power_to_watts(4.0, "kW") == 4000.0
+    assert power_to_watts(0.004, "MW") == 4000.0
+    assert power_to_watts(4000.0, " w ") == 4000.0
+
+
+def test_power_to_watts_defaults_to_kw_and_passes_none():
+    assert power_to_watts(4.0, None) == 4000.0
+    assert power_to_watts(4.0, "") == 4000.0
+    assert power_to_watts(None, "W") is None
 
 
 # --- windows ---------------------------------------------------------------
@@ -106,6 +122,39 @@ def test_running_device_power_returns_to_budget():
     d1 = dev("cwu", 1, 1500)
     decisions = run([(d1, inp(is_on=True))], surplus=-100, tolerance=300)
     assert decisions["cwu"].should_be_on  # budget = -100+300+1500 = 1700 >= 1500
+
+
+def test_unmanaged_running_device_does_not_fund_the_budget():
+    # A running device with automation off can never be shed, so its draw is
+    # not distributable to other devices.
+    d1, d2 = dev("cwu", 1, 1500), dev("ac", 2, 1000)
+    decisions = run(
+        [(d1, inp(enabled=False, is_on=True)), (d2, inp())], surplus=-100, tolerance=300
+    )
+    assert decisions["cwu"].reason == "disabled"
+    assert not decisions["ac"].should_be_on
+    assert decisions["ac"].reason == "insufficient_surplus"
+
+
+def test_unavailable_running_device_does_not_fund_the_budget():
+    d1, d2 = dev("cwu", 1, 1500), dev("ac", 2, 1000)
+    decisions = run(
+        [(d1, inp(available=False, is_on=True)), (d2, inp())], surplus=-100, tolerance=300
+    )
+    assert not decisions["ac"].should_be_on
+
+
+def test_disabled_tesla_charging_at_night_does_not_start_other_devices():
+    # Regression: the car charging on the cheap night tariff while the house
+    # imports 4 kW must not look like surplus for the DHW boost.
+    cwu = dev("cwu", 2, 2000, on_factor=0.8, solar_only=True)
+    t = tesla(priority=1)
+    decisions = run(
+        [(cwu, inp()), (t, inp(enabled=False, is_on=True, own_power_w=4000))],
+        surplus=-4032, price=0.4, source="buy", tolerance=300,
+    )
+    assert not decisions["cwu"].should_be_on
+    assert decisions["cwu"].reason == "insufficient_surplus"
 
 
 def test_shed_on_import():

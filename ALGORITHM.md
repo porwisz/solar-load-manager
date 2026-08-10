@@ -70,7 +70,7 @@ Inside `allocate()` the budget is further adjusted:
 
 ```
 budget = budget_w + import_tolerance          # default 300 W slack
-for each managed device currently ON:
+for each managed device currently ON, enabled and available:
     budget += its consumption                 # tesla: measured charger power
                                               # others: rated_power
 ```
@@ -80,6 +80,16 @@ budget the *distributable* total: the measured surplus already includes their
 draw, so without this a running device would appear to consume its own
 budget. Load shedding falls out naturally — as the budget shrinks, the
 lowest-priority devices stop fitting first.
+
+Only devices the manager may actually switch off count here. A device that is
+running while its automation switch is off (or while it is unavailable) will
+never be shed, so its draw stays out of the budget — otherwise, for example,
+a car charging on the cheap night tariff would look like surplus and start
+the DHW boost at 1 AM.
+
+Measured power sensors are read in watts using their own
+`unit_of_measurement` (W, kW or MW), so a charger reporting W is not mistaken
+for kW.
 
 ## 4. Marginal price (`marginal_price()`)
 

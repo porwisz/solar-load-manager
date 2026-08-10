@@ -12,8 +12,9 @@ A single coordinator runs every 60 seconds:
    (default 5-minute window) so passing clouds don't flap devices.
 2. Computes a **price score**: today's price position normalized to 0 (cheapest
    hour) … 1 (most expensive hour).
-3. Allocates the power budget (`surplus + import tolerance + power of devices
-   already running`) down the priority list. Each device runs when the budget
+3. Allocates the power budget (`surplus + import tolerance + power of managed
+   devices already running`, counting only devices the manager may switch off)
+   down the priority list. Each device runs when the budget
    covers its rated power (× turn-on factor for hysteresis), when the price is
    very cheap (score ≤ threshold), during its guaranteed-run window, or during
    a boost. Shedding happens in reverse priority order.

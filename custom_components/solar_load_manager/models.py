@@ -118,6 +118,23 @@ def marginal_price(
     return None, "unknown"
 
 
+def power_to_watts(value: float | None, unit: str | None) -> float | None:
+    """Normalise a power reading to watts using the sensor's own unit.
+
+    Power sensors report either W or kW depending on the integration, so the
+    unit decides the scale. When the unit is missing or unrecognised the
+    documented default (kW) applies.
+    """
+    if value is None:
+        return None
+    normalised = (unit or "").strip().lower()
+    if normalised == "w":
+        return value
+    if normalised == "mw":
+        return value * 1_000_000
+    return value * 1000
+
+
 def in_window(now: datetime, start: time | None, end: time | None) -> bool:
     """True when now's local time falls in [start, end); handles midnight crossing."""
     if start is None or end is None:
@@ -158,7 +175,10 @@ def allocate(
 
     budget = surplus_w + import_tolerance
     for cfg, inp in ordered:
-        if inp.is_on:
+        # Only devices the manager may actually switch off return their power
+        # to the budget. A running device that is disabled or unavailable will
+        # never be shed, so its draw is not distributable.
+        if inp.is_on and inp.enabled and inp.available:
             budget += inp.own_power_w if cfg.device_type == "tesla" else cfg.rated_power
 
     decisions: dict[str, Decision] = {}

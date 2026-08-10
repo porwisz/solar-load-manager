@@ -35,7 +35,14 @@ from .const import (
     DOMAIN,
     UPDATE_INTERVAL_SECONDS,
 )
-from .models import Decision, DeviceConfig, DeviceInput, allocate, marginal_price
+from .models import (
+    Decision,
+    DeviceConfig,
+    DeviceInput,
+    allocate,
+    marginal_price,
+    power_to_watts,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -90,6 +97,15 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
             return float(value)
         except (TypeError, ValueError):
             return None
+
+    def _power_w(self, entity_id: str | None) -> float | None:
+        """Read a power sensor in watts, honouring its unit_of_measurement."""
+        value = self._float_state(entity_id)
+        if value is None:
+            return None
+        state = self.hass.states.get(entity_id)
+        unit = state.attributes.get("unit_of_measurement") if state else None
+        return power_to_watts(value, unit)
 
     def _buy_price(self) -> float | None:
         """Tariff price: numeric state, or the configured attribute (e.g. 'price')."""
@@ -202,7 +218,7 @@ class SlmCoordinator(DataUpdateCoordinator[dict]):
             if cfg.device_type == DEVICE_TYPE_TESLA:
                 cable = self.hass.states.get(cfg.cable_sensor)
                 inp.cable_connected = cable is not None and cable.state == "on"
-                inp.own_power_w = (self._float_state(cfg.charger_power_sensor) or 0.0) * 1000
+                inp.own_power_w = self._power_w(cfg.charger_power_sensor) or 0.0
                 if cfg.battery_level_sensor and cfg.charge_limit_entity:
                     level = self._float_state(cfg.battery_level_sensor)
                     limit = self._float_state(cfg.charge_limit_entity)
